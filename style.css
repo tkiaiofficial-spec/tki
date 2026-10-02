@@ -1078,6 +1078,27 @@ body.dark-mode .web-source-link {
     max-height: 110px;
   }
 
+  /* CORRECTION MOBILE DU BOUTON ENVOYER */
+
+  .input-box {
+    gap: 5px;
+
+    padding: 8px 8px 8px 12px;
+  }
+
+  .input-box input {
+    min-width: 0;
+  }
+
+  .send {
+    flex-shrink: 0;
+
+    min-width: 42px;
+
+    width: 42px;
+    height: 42px;
+  }
+
 }
 
 .conversation-item {
