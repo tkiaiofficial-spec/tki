@@ -58,9 +58,7 @@ let selectedImage = null;
 imageButton.addEventListener(
   "click",
   function() {
-
     imageInput.click();
-
   }
 );
 
@@ -75,11 +73,8 @@ imageInput.addEventListener(
       imageInput.files[0];
 
     if (!file) {
-
       return;
-
     }
-
 
     /*
       Taille maximale :
@@ -101,9 +96,7 @@ imageInput.addEventListener(
       imageInput.value = "";
 
       return;
-
     }
-
 
     /*
       Vérification du type.
@@ -130,9 +123,7 @@ imageInput.addEventListener(
       imageInput.value = "";
 
       return;
-
     }
-
 
     /*
       Lecture de l'image en Base64.
@@ -140,7 +131,6 @@ imageInput.addEventListener(
 
     const reader =
       new FileReader();
-
 
     reader.onload =
       function(event) {
@@ -159,17 +149,13 @@ imageInput.addEventListener(
 
         };
 
-
         imagePreview.src =
           selectedImage.preview;
-
 
         imagePreviewContainer.classList.add(
           "show"
         );
-
       };
-
 
     reader.onerror =
       function() {
@@ -179,7 +165,6 @@ imageInput.addEventListener(
         );
 
       };
-
 
     reader.readAsDataURL(
       file
@@ -218,7 +203,6 @@ const webSearchButton =
     "#webSearchButton"
   );
 
-
 let webSearchEnabled =
   false;
 
@@ -234,12 +218,10 @@ webSearchButton.addEventListener(
     webSearchEnabled =
       !webSearchEnabled;
 
-
     webSearchButton.classList.toggle(
       "active",
       webSearchEnabled
     );
-
 
     if (
       webSearchEnabled
@@ -260,7 +242,9 @@ webSearchButton.addEventListener(
 
 
 /* =========================
-   FIREBASE
+   FIREBASE AUTH
+   FIREBASE = CONNEXION GOOGLE
+   UNIQUEMENT
 ========================= */
 
 const googleLoginButton =
@@ -308,18 +292,141 @@ const auth =
   firebase.auth();
 
 
-const db =
-  firebase.firestore();
-
-
-db.settings({
-  experimentalForceLongPolling: true
-});
-
-
 const googleProvider =
   new firebase.auth.GoogleAuthProvider();
 
+
+/* =========================
+   RENDER / SUPABASE API
+========================= */
+
+const API_BASE_URL =
+  "https://tki-backend.onrender.com";
+
+
+/*
+  Toutes les requêtes vers Render
+  utilisent automatiquement l'UID
+  Firebase de l'utilisateur connecté.
+
+  IMPORTANT :
+  Firebase sert ici à identifier
+  l'utilisateur côté frontend.
+
+  La vérification sécurisée du token
+  Firebase côté serveur sera renforcée
+  dans une étape ultérieure.
+*/
+
+function getApiHeaders(
+  extraHeaders = {}
+) {
+
+  const headers = {
+
+    "Content-Type":
+      "application/json",
+
+    ...extraHeaders
+
+  };
+
+
+  if (
+    auth.currentUser
+  ) {
+
+    headers["x-user-id"] =
+      auth.currentUser.uid;
+
+  }
+
+
+  return headers;
+
+}
+
+
+/*
+  Fonction centrale pour appeler
+  le backend Render.
+*/
+
+async function apiFetch(
+  endpoint,
+  options = {}
+) {
+
+  if (
+    !auth.currentUser
+  ) {
+
+    throw new Error(
+      "Utilisateur non connecté."
+    );
+
+  }
+
+
+  const response =
+    await fetch(
+
+      API_BASE_URL +
+      endpoint,
+
+      {
+
+        ...options,
+
+        headers:
+          getApiHeaders(
+            options.headers ||
+            {}
+          )
+
+      }
+
+    );
+
+
+  let data = {};
+
+
+  try {
+
+    data =
+      await response.json();
+
+  } catch (error) {
+
+    data = {};
+
+  }
+
+
+  if (
+    !response.ok
+  ) {
+
+    throw new Error(
+
+      data.error ||
+      data.message ||
+      `Erreur API (${response.status})`
+
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+/* =========================
+   GOOGLE LOGIN
+========================= */
 
 googleLoginButton.addEventListener(
   "click",
@@ -358,7 +465,8 @@ googleLoginButton.addEventListener(
         function(result) {
 
           fetch(
-            "https://tki-backend.onrender.com/api/login-notification",
+            API_BASE_URL +
+            "/api/login-notification",
             {
 
               method:
@@ -530,7 +638,8 @@ function updateProfileAvatar(
 
 
 /* =========================
-   CONVERSATIONS FIRESTORE
+   CONVERSATIONS
+   SUPABASE
 ========================= */
 
 let conversations = [];
@@ -539,29 +648,9 @@ let currentConversationId =
   null;
 
 
-function getUserConversationsCollection() {
-
-  const user =
-    auth.currentUser;
-
-
-  if (!user) {
-
-    return null;
-
-  }
-
-
-  return db
-    .collection("users")
-    .doc(user.uid)
-    .collection("conversations");
-
-}
-
-
 /* =========================
    MÉMOIRE UTILISATEUR
+   SUPABASE
 ========================= */
 
 let userMemory = {};
@@ -583,33 +672,64 @@ async function loadUserMemory(
 
   try {
 
-    const document =
-      await db
-        .collection("users")
-        .doc(user.uid)
-        .get();
+    const data =
+      await apiFetch(
+        "/api/memory"
+      );
 
 
-    if (
-      document.exists
-    ) {
-
-      const data =
-        document.data();
-
-
-      if (
-        data &&
+    const memoryRows =
+      Array.isArray(
         data.memory
-      ) {
+      )
+        ? data.memory
+        : [];
 
-        userMemory =
-          data.memory;
+
+    /*
+      Reconstituer l'objet mémoire
+      utilisé actuellement par TKI.
+    */
+
+    memoryRows.forEach(
+      function(row) {
+
+        if (
+          !row.category
+        ) {
+
+          return;
+
+        }
+
+
+        /*
+          Si plusieurs lignes ont
+          la même catégorie, on garde
+          la première.
+        */
+
+        if (
+          userMemory[
+            row.category
+          ] === undefined
+        ) {
+
+          userMemory[
+            row.category
+          ] =
+            row.content || "";
+
+        }
 
       }
+    );
 
-    }
 
+    /*
+      Conserver le prénom Google
+      dans la mémoire Supabase.
+    */
 
     const firstName =
       user.displayName
@@ -619,31 +739,125 @@ async function loadUserMemory(
         : "";
 
 
+    if (!firstName) {
+
+      return;
+
+    }
+
+
+    const existingFirstName =
+      memoryRows.find(
+        function(row) {
+
+          return (
+            row.category ===
+            "firstName"
+          );
+
+        }
+      );
+
+
+    /*
+      Aucun prénom enregistré :
+      on le crée.
+    */
+
     if (
-      firstName &&
-      userMemory.firstName !== firstName
+      !existingFirstName
     ) {
+
+      await apiFetch(
+        "/api/memory",
+        {
+
+          method:
+            "POST",
+
+          body:
+            JSON.stringify({
+
+              category:
+                "firstName",
+
+              content:
+                firstName
+
+            })
+
+        }
+      );
+
 
       userMemory.firstName =
         firstName;
 
+    }
 
-      await db
-        .collection("users")
-        .doc(user.uid)
-        .set(
+
+    /*
+      Le prénom a changé :
+      on remplace l'ancienne valeur.
+    */
+
+    else if (
+      existingFirstName.content !==
+      firstName
+    ) {
+
+      try {
+
+        await apiFetch(
+
+          "/api/memory/" +
+          encodeURIComponent(
+            existingFirstName.id
+          ),
 
           {
-            memory:
-              userMemory
-          },
 
-          {
-            merge:
-              true
+            method:
+              "DELETE"
+
           }
 
         );
+
+      } catch (error) {
+
+        console.error(
+          "Impossible de supprimer l'ancien prénom :",
+          error
+        );
+
+      }
+
+
+      await apiFetch(
+        "/api/memory",
+        {
+
+          method:
+            "POST",
+
+          body:
+            JSON.stringify({
+
+              category:
+                "firstName",
+
+              content:
+                firstName
+
+            })
+
+        }
+      );
+
+
+      userMemory.firstName =
+        firstName;
 
     }
 
@@ -653,6 +867,8 @@ async function loadUserMemory(
       "Erreur lors du chargement de la mémoire :",
       error
     );
+
+    userMemory = {};
 
   }
 
@@ -690,7 +906,8 @@ function saveCurrentConversationId() {
 
   if (
     !user ||
-    !currentConversationId
+    currentConversationId ===
+      null
   ) {
 
     return;
@@ -778,7 +995,94 @@ function clearSavedCurrentConversationId(
 
 
 /* =========================
+   CHARGER LES MESSAGES
+   D'UNE CONVERSATION
+========================= */
+
+function normalizeSupabaseMessages(
+  rows
+) {
+
+  return rows.map(
+    function(row) {
+
+      return {
+
+        id:
+          row.id,
+
+        text:
+          row.content || "",
+
+        type:
+          row.role === "user"
+            ? "user-message"
+            : "ai-message",
+
+        image:
+          row.image || null,
+
+        sources:
+          Array.isArray(
+            row.sources
+          )
+            ? row.sources
+            : [],
+
+        created_at:
+          row.created_at ||
+          null
+
+      };
+
+    }
+  );
+
+}
+
+
+async function loadConversationMessages(
+  conversation
+) {
+
+  if (
+    !auth.currentUser
+  ) {
+
+    return [];
+
+  }
+
+
+  const data =
+    await apiFetch(
+
+      "/api/conversations/" +
+      encodeURIComponent(
+        conversation.id
+      ) +
+      "/messages"
+
+    );
+
+
+  conversation.messages =
+    normalizeSupabaseMessages(
+
+      data.messages ||
+      []
+
+    );
+
+
+  return conversation.messages;
+
+}
+
+
+/* =========================
    CHARGER LES CONVERSATIONS
+   SUPABASE
 ========================= */
 
 async function loadUserConversations(
@@ -809,12 +1113,15 @@ async function loadUserConversations(
 
   try {
 
-    const snapshot =
-      await db
-        .collection("users")
-        .doc(user.uid)
-        .collection("conversations")
-        .get();
+    /*
+      Récupère uniquement les
+      conversations de l'utilisateur.
+    */
+
+    const data =
+      await apiFetch(
+        "/api/conversations"
+      );
 
 
     if (
@@ -828,22 +1135,104 @@ async function loadUserConversations(
     }
 
 
-    conversations =
-      snapshot.docs.map(
-        function(doc) {
+    const serverConversations =
+      Array.isArray(
+        data.conversations
+      )
+        ? data.conversations
+        : [];
 
-          return doc.data();
+
+    /*
+      Conversion vers le format
+      utilisé par l'interface TKI.
+    */
+
+    conversations =
+      serverConversations.map(
+        function(conversation) {
+
+          return {
+
+            ...conversation,
+
+            messages: []
+
+          };
 
         }
       );
 
 
+    /*
+      Pour conserver le fonctionnement
+      actuel de TKI, on charge aussi
+      les messages.
+    */
+
+    await Promise.all(
+
+      conversations.map(
+        async function(conversation) {
+
+          try {
+
+            await loadConversationMessages(
+              conversation
+            );
+
+          } catch (error) {
+
+            console.error(
+
+              "Impossible de charger les messages de la conversation " +
+              conversation.id +
+              " :",
+
+              error
+
+            );
+
+
+            conversation.messages =
+              [];
+
+          }
+
+        }
+      )
+
+    );
+
+
+    /*
+      Les conversations les plus
+      récemment modifiées apparaissent
+      en premier.
+    */
+
     conversations.sort(
       function(a, b) {
 
+        const dateA =
+          new Date(
+            a.updated_at ||
+            a.created_at ||
+            0
+          ).getTime();
+
+
+        const dateB =
+          new Date(
+            b.updated_at ||
+            b.created_at ||
+            0
+          ).getTime();
+
+
         return (
-          Number(b.id) -
-          Number(a.id)
+          dateB -
+          dateA
         );
 
       }
@@ -852,6 +1241,11 @@ async function loadUserConversations(
 
     renderConversationList();
 
+
+    /*
+      Restaurer la conversation
+      qui était ouverte avant.
+    */
 
     const savedConversationId =
       getSavedCurrentConversationId(
@@ -917,20 +1311,73 @@ async function loadUserConversations(
 
 
 /* =========================
-   SAUVEGARDER UNE CONVERSATION
+   CRÉER CONVERSATION
+   SUPABASE
+========================= */
+
+async function createConversationOnSupabase(
+  title
+) {
+
+  const data =
+    await apiFetch(
+
+      "/api/conversations",
+
+      {
+
+        method:
+          "POST",
+
+        body:
+          JSON.stringify({
+
+            title:
+              title ||
+              "Nouvelle conversation"
+
+          })
+
+      }
+
+    );
+
+
+  if (
+    !data.conversation
+  ) {
+
+    throw new Error(
+      "La conversation n'a pas été créée."
+    );
+
+  }
+
+
+  return {
+
+    ...data.conversation,
+
+    messages: []
+
+  };
+
+}
+
+
+/* =========================
+   MODIFIER CONVERSATION
+   SUPABASE
 ========================= */
 
 async function saveConversation(
   conversation
 ) {
 
-  const collection =
-    getUserConversationsCollection();
-
-
   if (
-    !collection ||
-    !conversation
+    !auth.currentUser ||
+    !conversation ||
+    !conversation.id
   ) {
 
     return;
@@ -940,15 +1387,33 @@ async function saveConversation(
 
   try {
 
-    await collection
-      .doc(
-        String(
-          conversation.id
-        )
-      )
-      .set(
-        conversation
-      );
+    await apiFetch(
+
+      "/api/conversations/" +
+      encodeURIComponent(
+        conversation.id
+      ),
+
+      {
+
+        method:
+          "PUT",
+
+        body:
+          JSON.stringify({
+
+            title:
+              conversation.title ||
+              "Nouvelle conversation",
+
+            favorite:
+              !!conversation.favorite
+
+          })
+
+      }
+
+    );
 
   } catch (error) {
 
@@ -963,40 +1428,107 @@ async function saveConversation(
 
 
 /* =========================
-   SUPPRIMER UNE CONVERSATION
+   SUPPRIMER CONVERSATION
+   SUPABASE
 ========================= */
 
-async function deleteConversationFromFirestore(
+async function deleteConversationFromSupabase(
   id
 ) {
 
-  const collection =
-    getUserConversationsCollection();
-
-
-  if (!collection) {
+  if (
+    !auth.currentUser
+  ) {
 
     return;
 
   }
 
 
-  try {
+  await apiFetch(
 
-    await collection
-      .doc(
-        String(id)
-      )
-      .delete();
+    "/api/conversations/" +
+    encodeURIComponent(
+      id
+    ),
 
-  } catch (error) {
+    {
 
-    console.error(
-      "Erreur lors de la suppression de la conversation :",
-      error
-    );
+      method:
+        "DELETE"
+
+    }
+
+  );
+
+}
+
+
+/* =========================
+   SAUVEGARDER UN MESSAGE
+   SUPABASE
+========================= */
+
+async function saveMessageToSupabase(
+  conversationId,
+  message
+) {
+
+  if (
+    !auth.currentUser
+  ) {
+
+    return;
 
   }
+
+
+  const role =
+    message.type ===
+      "user-message"
+      ? "user"
+      : "model";
+
+
+  await apiFetch(
+
+    "/api/conversations/" +
+    encodeURIComponent(
+      conversationId
+    ) +
+    "/messages",
+
+    {
+
+      method:
+        "POST",
+
+      body:
+        JSON.stringify({
+
+          role:
+            role,
+
+          content:
+            message.text ||
+            "",
+
+          image:
+            message.image ||
+            null,
+
+          sources:
+            Array.isArray(
+              message.sources
+            )
+              ? message.sources
+              : []
+
+        })
+
+    }
+
+  );
 
 }
 
@@ -1050,6 +1582,14 @@ auth.onAuthStateChanged(
 
       }
 
+
+      /*
+        Firebase :
+        connexion seulement.
+
+        Supabase :
+        mémoire + conversations.
+      */
 
       await loadUserMemory(
         user
@@ -1108,233 +1648,6 @@ auth.onAuthStateChanged(
 
 
 /* =========================
-   ENVOYER
-========================= */
-
-sendButton.addEventListener(
-  "click",
-  sendMessage
-);
-
-
-input.addEventListener(
-  "keydown",
-  function(event) {
-
-    if (
-      event.key ===
-      "Enter"
-    ) {
-
-      sendMessage();
-
-    }
-
-  }
-);
-
-
-function sendMessage() {
-
-  const text =
-    input.value.trim();
-
-
-  /*
-    Il est possible d'envoyer
-    une image même sans texte.
-  */
-
-  if (
-    text === "" &&
-    !selectedImage
-  ) {
-
-    return;
-
-  }
-
-
-  if (
-    welcomeMessage
-  ) {
-
-    welcomeMessage.style.display =
-      "none";
-
-  }
-
-
-  let conversation =
-    getCurrentConversation();
-
-
-  /* NOUVELLE DISCUSSION */
-
-  if (!conversation) {
-
-    conversation = {
-
-      id:
-        Date.now(),
-
-      title:
-        text !== ""
-          ? (
-              text.length > 30
-                ? text.substring(
-                    0,
-                    30
-                  ) +
-                  "..."
-                : text
-            )
-          : "Analyse d'image",
-
-      messages: [],
-
-      favorite:
-        false
-
-    };
-
-
-    if (
-      auth.currentUser
-    ) {
-
-      conversations.unshift(
-        conversation
-      );
-
-
-      currentConversationId =
-        conversation.id;
-
-
-      saveCurrentConversationId();
-
-
-      renderConversationList();
-
-
-      saveConversation(
-        conversation
-      );
-
-    }
-
-  } else {
-
-    saveCurrentConversationId();
-
-  }
-
-
-  /* MESSAGE UTILISATEUR */
-
-  const userMessage = {
-
-    text:
-      text !== ""
-        ? text
-        : "Analyse cette image.",
-
-    type:
-      "user-message"
-
-  };
-
-
-  if (
-    selectedImage
-  ) {
-
-    userMessage.image =
-      selectedImage.preview;
-
-  }
-
-
-  conversation.messages.push(
-    userMessage
-  );
-
-
-  addMessage(
-
-    userMessage.text,
-
-    "user-message",
-
-    selectedImage
-      ? selectedImage.preview
-      : null
-
-  );
-
-
-  input.value =
-    "";
-
-
-  /*
-    Conserver l'image
-    pour l'envoi.
-  */
-
-  const imageToSend =
-    selectedImage;
-
-
-  /*
-    Nettoyage de l'interface.
-  */
-
-  selectedImage =
-    null;
-
-
-  imageInput.value =
-    "";
-
-
-  imagePreview.src =
-    "";
-
-
-  imagePreviewContainer.classList.remove(
-    "show"
-  );
-
-
-  if (
-    auth.currentUser
-  ) {
-
-    saveConversation(
-      conversation
-    );
-
-  }
-
-
-  sendMessageToGemini(
-
-    text !== ""
-      ? text
-      : "Qu'est-ce qu'il y a sur cette image ?",
-
-    conversation,
-
-    imageToSend
-
-  );
-
-}
-
-
-/* =========================
    CONSTRUIRE LA MÉMOIRE
 ========================= */
 
@@ -1361,8 +1674,12 @@ function buildConversationMemory(
 
         return (
 
-          conversation.id !==
-            currentConversation.id &&
+          String(
+            conversation.id
+          ) !==
+          String(
+            currentConversation.id
+          ) &&
 
           Array.isArray(
             conversation.messages
@@ -1404,7 +1721,10 @@ function buildConversationMemory(
                 : "TKI"
             ) +
             " : " +
-            message.text +
+            (
+              message.text ||
+              ""
+            ) +
             "\n";
 
         }
@@ -1438,6 +1758,273 @@ function buildConversationMemory(
 
 
   return memoryContext;
+
+}
+
+
+/* =========================
+   ENVOYER
+========================= */
+
+async function sendMessage() {
+
+  const text =
+    input.value.trim();
+
+
+  /*
+    Il est possible d'envoyer
+    une image même sans texte.
+  */
+
+  if (
+    text === "" &&
+    !selectedImage
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    welcomeMessage
+  ) {
+
+    welcomeMessage.style.display =
+      "none";
+
+  }
+
+
+  let conversation =
+    getCurrentConversation();
+
+
+  /*
+    NOUVELLE DISCUSSION
+
+    Si l'utilisateur est connecté :
+    création réelle dans Supabase.
+
+    Sinon :
+    discussion locale uniquement.
+  */
+
+  if (!conversation) {
+
+    const title =
+      text !== ""
+        ? (
+            text.length > 30
+              ? text.substring(
+                  0,
+                  30
+                ) +
+                "..."
+              : text
+          )
+        : "Analyse d'image";
+
+
+    if (
+      auth.currentUser
+    ) {
+
+      try {
+
+        conversation =
+          await createConversationOnSupabase(
+            title
+          );
+
+      } catch (error) {
+
+        console.error(
+          "Erreur création conversation :",
+          error
+        );
+
+
+        alert(
+          "Impossible de créer la conversation."
+        );
+
+
+        return;
+
+      }
+
+    } else {
+
+      conversation = {
+
+        id:
+          Date.now(),
+
+        title:
+          title,
+
+        messages: [],
+
+        favorite:
+          false
+
+      };
+
+    }
+
+
+    conversations.unshift(
+      conversation
+    );
+
+
+    currentConversationId =
+      conversation.id;
+
+
+    saveCurrentConversationId();
+
+
+    renderConversationList();
+
+  } else {
+
+    saveCurrentConversationId();
+
+  }
+
+
+  /*
+    Préparer l'image pour Gemini.
+  */
+
+  const imageToSend =
+    selectedImage
+      ? {
+
+          mimeType:
+            selectedImage.mimeType,
+
+          data:
+            selectedImage.data
+
+        }
+      : null;
+
+
+  /*
+    MESSAGE UTILISATEUR
+  */
+
+  const userMessage = {
+
+    text:
+      text !== ""
+        ? text
+        : "Analyse cette image.",
+
+    type:
+      "user-message",
+
+    image:
+      selectedImage
+        ? selectedImage.preview
+        : null
+
+  };
+
+
+  conversation.messages.push(
+    userMessage
+  );
+
+
+  addMessage(
+
+    userMessage.text,
+
+    "user-message",
+
+    userMessage.image,
+
+    []
+
+  );
+
+
+  input.value =
+    "";
+
+
+  /*
+    Nettoyage de l'image.
+  */
+
+  selectedImage =
+    null;
+
+
+  imageInput.value =
+    "";
+
+
+  imagePreview.src =
+    "";
+
+
+  imagePreviewContainer.classList.remove(
+    "show"
+  );
+
+
+  /*
+    Sauvegarder le message utilisateur
+    dans Supabase.
+  */
+
+  if (
+    auth.currentUser
+  ) {
+
+    try {
+
+      await saveMessageToSupabase(
+
+        conversation.id,
+
+        userMessage
+
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Erreur sauvegarde message utilisateur :",
+        error
+      );
+
+    }
+
+  }
+
+
+  /*
+    Envoyer à Gemini via Render.
+  */
+
+  await sendMessageToGemini(
+
+    text !== ""
+      ? text
+      : "Qu'est-ce qu'il y a sur cette image ?",
+
+    conversation,
+
+    imageToSend
+
+  );
 
 }
 
@@ -1481,35 +2068,37 @@ async function sendMessageToGemini(
 
   try {
 
+    /*
+      Historique des derniers messages.
+    */
+
     const conversationHistory =
       conversation.messages
+        .slice(-30)
         .map(
           function(message) {
 
-            return (
+            return {
 
-              (
+              role:
                 message.type ===
                 "user-message"
+                  ? "user"
+                  : "model",
 
-                  ? "Utilisateur"
+              text:
+                message.text ||
+                ""
 
-                  : "TKI"
-
-              ) +
-
-              " : " +
-
-              message.text
-
-            );
+            };
 
           }
-        )
-        .join(
-          "\n\n"
         );
 
+
+    /*
+      Mémoire utilisateur.
+    */
 
     let memoryContext =
       "";
@@ -1528,6 +2117,10 @@ async function sendMessageToGemini(
     }
 
 
+    /*
+      Mémoire des anciennes conversations.
+    */
+
     const previousConversationMemory =
       buildConversationMemory(
         conversation
@@ -1539,32 +2132,28 @@ async function sendMessageToGemini(
     ) {
 
       memoryContext +=
-
         "Historique des conversations précédentes de cet utilisateur. " +
-
         "Utilise ces informations uniquement lorsqu'elles sont pertinentes " +
-
         "pour répondre à la question actuelle.\n" +
-
         previousConversationMemory +
-
         "\n\n";
 
     }
 
 
     /*
-      Préparation des données.
+      DONNÉES ENVOYÉES AU BACKEND.
     */
 
     const requestBody = {
 
       message:
+        userText,
 
-        memoryContext +
+      memoryContext:
+        memoryContext,
 
-        "Conversation actuelle :\n" +
-
+      conversationHistory:
         conversationHistory,
 
       webSearch:
@@ -1597,19 +2186,16 @@ async function sendMessageToGemini(
     const response =
       await fetch(
 
-        "https://tki-backend.onrender.com/api/chat",
+        API_BASE_URL +
+        "/api/chat",
 
         {
 
           method:
             "POST",
 
-          headers: {
-
-            "Content-Type":
-              "application/json"
-
-          },
+          headers:
+            getApiHeaders(),
 
           body:
             JSON.stringify(
@@ -1621,8 +2207,19 @@ async function sendMessageToGemini(
       );
 
 
-    const data =
-      await response.json();
+    let data = {};
+
+
+    try {
+
+      data =
+        await response.json();
+
+    } catch (error) {
+
+      data = {};
+
+    }
 
 
     if (
@@ -1643,18 +2240,31 @@ async function sendMessageToGemini(
 
 
     const aiResponse =
-      data.reply;
+      data.reply ||
+      "Je n'ai pas reçu de réponse.";
 
 
-    conversation.messages.push({
+    const aiMessage = {
 
       text:
         aiResponse,
 
       type:
-        "ai-message"
+        "ai-message",
 
-    });
+      sources:
+        Array.isArray(
+          data.sources
+        )
+          ? data.sources
+          : []
+
+    };
+
+
+    conversation.messages.push(
+      aiMessage
+    );
 
 
     addMessage(
@@ -1665,19 +2275,38 @@ async function sendMessageToGemini(
 
       null,
 
-      data.sources ||
-        []
+      aiMessage.sources
 
     );
 
+
+    /*
+      Sauvegarder la réponse TKI
+      dans Supabase.
+    */
 
     if (
       auth.currentUser
     ) {
 
-      saveConversation(
-        conversation
-      );
+      try {
+
+        await saveMessageToSupabase(
+
+          conversation.id,
+
+          aiMessage
+
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Erreur sauvegarde réponse TKI :",
+          error
+        );
+
+      }
 
     }
 
@@ -1696,22 +2325,34 @@ async function sendMessageToGemini(
       "Désolé, une erreur technique est survenue.";
 
 
-    conversation.messages.push({
+    const aiErrorMessage = {
 
       text:
         errorMessage,
 
       type:
-        "ai-message"
+        "ai-message",
 
-    });
+      sources:
+        []
+
+    };
+
+
+    conversation.messages.push(
+      aiErrorMessage
+    );
 
 
     addMessage(
 
       errorMessage,
 
-      "ai-message"
+      "ai-message",
+
+      null,
+
+      []
 
     );
 
@@ -1720,9 +2361,24 @@ async function sendMessageToGemini(
       auth.currentUser
     ) {
 
-      saveConversation(
-        conversation
-      );
+      try {
+
+        await saveMessageToSupabase(
+
+          conversation.id,
+
+          aiErrorMessage
+
+        );
+
+      } catch (saveError) {
+
+        console.error(
+          "Erreur sauvegarde message d'erreur :",
+          saveError
+        );
+
+      }
 
     }
 
@@ -1878,16 +2534,6 @@ function renderMarkdown(
     html.replace(
       /^[-*] (.+)$/gm,
       "<li>$1</li>"
-    );
-
-
-  html =
-    html.replace(
-
-      /(<li>.*<\/li>)(?:\n|$)/g,
-
-      "$1"
-
     );
 
 
@@ -2195,10 +2841,6 @@ newChatButton.addEventListener(
       "";
 
 
-    /*
-      Nettoyer l'image.
-    */
-
     selectedImage =
       null;
 
@@ -2309,7 +2951,10 @@ function renderConversationList() {
             ? "⭐ "
             : ""
         ) +
-        conversation.title;
+        (
+          conversation.title ||
+          "Nouvelle conversation"
+        );
 
 
       button.style.flex =
@@ -2593,72 +3238,124 @@ function renderConversationList() {
 
       deleteButton.addEventListener(
         "click",
-        function(event) {
+        async function(event) {
 
           event.stopPropagation();
 
 
-          conversations =
-            conversations.filter(
-              function(item) {
-
-                return (
-                  item.id !==
-                  conversation.id
-                );
-
-              }
+          const confirmed =
+            confirm(
+              "Supprimer cette conversation ?"
             );
 
 
-          if (
-            currentConversationId ===
-            conversation.id
-          ) {
+          if (!confirmed) {
 
-            currentConversationId =
-              null;
+            return;
+
+          }
 
 
-            const user =
-              auth.currentUser;
+          try {
 
+            /*
+              Supabase d'abord.
+            */
 
-            if (user) {
+            if (
+              auth.currentUser
+            ) {
 
-              clearSavedCurrentConversationId(
-                user
+              await deleteConversationFromSupabase(
+                conversation.id
               );
 
             }
 
 
-            messages.innerHTML =
-              "";
+            /*
+              Puis suppression locale.
+            */
 
+            conversations =
+              conversations.filter(
+                function(item) {
 
-            input.value =
-              "";
+                  return (
+                    String(
+                      item.id
+                    ) !==
+                    String(
+                      conversation.id
+                    )
+                  );
+
+                }
+              );
 
 
             if (
-              welcomeMessage
+              String(
+                currentConversationId
+              ) ===
+              String(
+                conversation.id
+              )
             ) {
 
-              welcomeMessage.style.display =
+              currentConversationId =
+                null;
+
+
+              const user =
+                auth.currentUser;
+
+
+              if (user) {
+
+                clearSavedCurrentConversationId(
+                  user
+                );
+
+              }
+
+
+              messages.innerHTML =
                 "";
+
+
+              input.value =
+                "";
+
+
+              if (
+                welcomeMessage
+              ) {
+
+                welcomeMessage.style.display =
+                  "";
+
+              }
 
             }
 
+
+            renderConversationList();
+
+
+          } catch (error) {
+
+            console.error(
+              "Erreur suppression conversation :",
+              error
+            );
+
+
+            alert(
+              "Impossible de supprimer la conversation."
+            );
+
           }
-
-
-          renderConversationList();
-
-
-          deleteConversationFromFirestore(
-            conversation.id
-          );
 
         }
       );
@@ -2760,19 +3457,25 @@ function renderConversationList() {
    OUVRIR DISCUSSION
 ========================= */
 
-function openConversation(
+async function openConversation(
   id
 ) {
 
-  currentConversationId =
-    id;
-
-
-  saveCurrentConversationId();
-
-
   const conversation =
-    getCurrentConversation();
+    conversations.find(
+      function(item) {
+
+        return (
+          String(
+            item.id
+          ) ===
+          String(
+            id
+          )
+        );
+
+      }
+    );
 
 
   if (!conversation) {
@@ -2780,6 +3483,13 @@ function openConversation(
     return;
 
   }
+
+
+  currentConversationId =
+    conversation.id;
+
+
+  saveCurrentConversationId();
 
 
   messages.innerHTML =
@@ -2796,6 +3506,42 @@ function openConversation(
   }
 
 
+  /*
+    Recharge les messages depuis
+    Supabase pour être certain d'avoir
+    la version la plus récente.
+  */
+
+  if (
+    auth.currentUser
+  ) {
+
+    try {
+
+      await loadConversationMessages(
+        conversation
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Erreur chargement conversation :",
+        error
+      );
+
+
+      alert(
+        "Impossible de charger cette conversation."
+      );
+
+
+      return;
+
+    }
+
+  }
+
+
   conversation.messages.forEach(
     function(message) {
 
@@ -2806,7 +3552,10 @@ function openConversation(
         message.type,
 
         message.image ||
-          null
+          null,
+
+        message.sources ||
+          []
 
       );
 
@@ -2817,6 +3566,9 @@ function openConversation(
   sidebar.classList.remove(
     "open"
   );
+
+
+  renderConversationList();
 
 }
 
@@ -2831,8 +3583,12 @@ function getCurrentConversation() {
     function(conversation) {
 
       return (
-        conversation.id ===
-        currentConversationId
+        String(
+          conversation.id
+        ) ===
+        String(
+          currentConversationId
+        )
       );
 
     }
@@ -3236,6 +3992,39 @@ document.addEventListener(
 
         }
       );
+
+  }
+);
+/* =========================
+   ENVOYER LE MESSAGE
+========================= */
+
+sendButton.addEventListener(
+  "click",
+  function() {
+    sendMessage();
+  }
+);
+
+
+/* =========================
+   ENTRÉE POUR ENVOYER
+========================= */
+
+input.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
 
   }
 );
