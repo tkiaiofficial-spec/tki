@@ -411,7 +411,7 @@ async function apiFetch(
 ========================= */
 
 const TKI_FREE_DEFAULT_LIMIT =
-  50;
+  30;
 
 
 let tkiFreeUsed =
@@ -422,8 +422,695 @@ let tkiFreeLimit =
   TKI_FREE_DEFAULT_LIMIT;
 
 
+let tkiPlan =
+  "free";
+
 let tkiPlanIndicator =
   null;
+
+
+
+/* =========================
+   PERSONNALISATION TKI
+========================= */
+
+const customizationButton =
+  document.querySelector("#customizationButton");
+
+const customizationModal =
+  document.querySelector("#customizationModal");
+
+const closeCustomizationButton =
+  document.querySelector("#closeCustomizationButton");
+
+const customizationDoneButton =
+  document.querySelector("#customizationDoneButton");
+
+const resetCustomizationButton =
+  document.querySelector("#resetCustomizationButton");
+
+const wallpaperButton =
+  document.querySelector("#wallpaperButton");
+
+const wallpaperInput =
+  document.querySelector("#wallpaperInput");
+
+const removeWallpaperButton =
+  document.querySelector("#removeWallpaperButton");
+
+const userBubbleColor =
+  document.querySelector("#userBubbleColor");
+
+const aiBubbleColor =
+  document.querySelector("#aiBubbleColor");
+
+const accentColor =
+  document.querySelector("#accentColor");
+
+const imageIconSelect =
+  document.querySelector("#imageIconSelect");
+
+const webIconSelect =
+  document.querySelector("#webIconSelect");
+
+
+const TKI_PERSONALIZATION_KEY =
+  "tki_personalization";
+
+
+const DEFAULT_PERSONALIZATION = {
+  theme: "default",
+  userBubbleColor: "",
+  aiBubbleColor: "",
+  accentColor: "",
+  wallpaper: "",
+  imageIcon: "🖼️",
+  webIcon: "🌐"
+};
+
+
+const TKI_BUBBLE_COLORS = {
+  gold: "#C9A227",
+  blue: "#4A90E2",
+  green: "#43A047",
+  purple: "#8E5BD9",
+  red: "#E05252"
+};
+
+
+let tkiPersonalization = {
+  ...DEFAULT_PERSONALIZATION
+};
+
+
+function isTKIPro() {
+  return tkiPlan === "pro";
+}
+
+
+function isValidColor(value) {
+  if (!value || typeof value !== "string") {
+    return false;
+  }
+
+  const test = document.createElement("div");
+  test.style.color = value;
+
+  return test.style.color !== "";
+}
+
+
+function loadTKIPersonalization() {
+  try {
+    const saved =
+      localStorage.getItem(TKI_PERSONALIZATION_KEY);
+
+    if (!saved) {
+      tkiPersonalization = {
+        ...DEFAULT_PERSONALIZATION
+      };
+      return;
+    }
+
+    const parsed = JSON.parse(saved);
+
+    tkiPersonalization = {
+      ...DEFAULT_PERSONALIZATION,
+      ...(parsed || {})
+    };
+
+    if (
+      !["default", "halloween", "christmas", "easter", "aid"].includes(
+        tkiPersonalization.theme
+      )
+    ) {
+      tkiPersonalization.theme = "default";
+    }
+
+    if (
+      !["🖼️", "📷", "🎨", "🌄", "🔍"].includes(
+        tkiPersonalization.imageIcon
+      )
+    ) {
+      tkiPersonalization.imageIcon = "🖼️";
+    }
+
+    if (
+      !["🌐", "🔎", "🛰️", "🌍", "📡"].includes(
+        tkiPersonalization.webIcon
+      )
+    ) {
+      tkiPersonalization.webIcon = "🌐";
+    }
+
+  } catch (error) {
+    console.error(
+      "Erreur chargement personnalisation :",
+      error
+    );
+
+    tkiPersonalization = {
+      ...DEFAULT_PERSONALIZATION
+    };
+  }
+}
+
+
+function saveTKIPersonalization() {
+  try {
+    localStorage.setItem(
+      TKI_PERSONALIZATION_KEY,
+      JSON.stringify(tkiPersonalization)
+    );
+  } catch (error) {
+    console.error(
+      "Impossible de sauvegarder la personnalisation :",
+      error
+    );
+
+    /*
+      Un fond trop lourd peut dépasser la capacité
+      de localStorage. On conserve les autres réglages.
+    */
+    if (tkiPersonalization.wallpaper) {
+      tkiPersonalization.wallpaper = "";
+
+      try {
+        localStorage.setItem(
+          TKI_PERSONALIZATION_KEY,
+          JSON.stringify(tkiPersonalization)
+        );
+      } catch (secondError) {
+        console.error(
+          "Impossible de sauvegarder les réglages :",
+          secondError
+        );
+      }
+    }
+  }
+}
+
+
+function applyTKIPersonalization() {
+  const body = document.body;
+
+  if (!body) {
+    return;
+  }
+
+  /* THÈMES */
+  body.classList.remove(
+    "tki-theme-halloween",
+    "tki-theme-christmas",
+    "tki-theme-easter",
+    "tki-theme-aid"
+  );
+
+  const themeClass = {
+    halloween: "tki-theme-halloween",
+    christmas: "tki-theme-christmas",
+    easter: "tki-theme-easter",
+    aid: "tki-theme-aid"
+  }[tkiPersonalization.theme];
+
+  if (themeClass) {
+    body.classList.add(themeClass);
+  }
+
+  /* COULEURS DES BULLES */
+  if (isValidColor(tkiPersonalization.userBubbleColor)) {
+    body.style.setProperty(
+      "--tki-user-bubble",
+      tkiPersonalization.userBubbleColor
+    );
+  } else {
+    body.style.removeProperty("--tki-user-bubble");
+  }
+
+  if (isValidColor(tkiPersonalization.aiBubbleColor)) {
+    body.style.setProperty(
+      "--tki-ai-bubble",
+      tkiPersonalization.aiBubbleColor
+    );
+  } else {
+    body.style.removeProperty("--tki-ai-bubble");
+  }
+
+  /* COULEUR D'ACCENT PRO */
+  if (isValidColor(tkiPersonalization.accentColor)) {
+    body.style.setProperty(
+      "--tki-accent",
+      tkiPersonalization.accentColor
+    );
+  } else {
+    body.style.removeProperty("--tki-accent");
+  }
+
+  /* FOND D'ÉCRAN PRO */
+  if (
+    isTKIPro() &&
+    tkiPersonalization.wallpaper
+  ) {
+    body.classList.add("tki-custom-wallpaper");
+    body.style.setProperty(
+      "--tki-wallpaper",
+      `url("${tkiPersonalization.wallpaper}")`
+    );
+  } else {
+    body.classList.remove("tki-custom-wallpaper");
+    body.style.removeProperty("--tki-wallpaper");
+  }
+
+  /* ICÔNES PRO */
+  if (imageButton) {
+    imageButton.textContent =
+      tkiPersonalization.imageIcon || "🖼️";
+  }
+
+  if (webSearchButton) {
+    webSearchButton.textContent =
+      tkiPersonalization.webIcon || "🌐";
+  }
+}
+
+
+function syncCustomizationControls() {
+  document
+    .querySelectorAll(".custom-theme-option")
+    .forEach(function(button) {
+      const theme =
+        button.dataset.customTheme ||
+        button.dataset.theme ||
+        "default";
+
+      button.classList.toggle(
+        "selected",
+        theme === tkiPersonalization.theme
+      );
+    });
+
+  document
+    .querySelectorAll(".custom-bubble-color, .bubble-color-option")
+    .forEach(function(button) {
+      const colorKey =
+        button.dataset.bubbleColor ||
+        button.dataset.color ||
+        "";
+
+      const colorValue =
+        TKI_BUBBLE_COLORS[colorKey] ||
+        colorKey;
+
+      button.classList.toggle(
+        "selected",
+        colorValue === tkiPersonalization.userBubbleColor
+      );
+    });
+
+  if (userBubbleColor) {
+    userBubbleColor.value =
+      isValidColor(tkiPersonalization.userBubbleColor)
+        ? tkiPersonalization.userBubbleColor
+        : "#C9A227";
+  }
+
+  if (aiBubbleColor) {
+    aiBubbleColor.value =
+      isValidColor(tkiPersonalization.aiBubbleColor)
+        ? tkiPersonalization.aiBubbleColor
+        : "#e0e0e0";
+  }
+
+  if (accentColor) {
+    accentColor.value =
+      isValidColor(tkiPersonalization.accentColor)
+        ? tkiPersonalization.accentColor
+        : "#111111";
+  }
+
+  if (imageIconSelect) {
+    imageIconSelect.value =
+      tkiPersonalization.imageIcon || "🖼️";
+  }
+
+  if (webIconSelect) {
+    webIconSelect.value =
+      tkiPersonalization.webIcon || "🌐";
+  }
+
+  updateCustomizationProUI();
+}
+
+
+function updateCustomizationProUI() {
+  const proElements =
+    document.querySelectorAll(
+      ".custom-pro-option, .pro-only"
+    );
+
+  proElements.forEach(function(element) {
+    if (isTKIPro()) {
+      element.classList.remove("locked");
+      element.style.opacity = "";
+      element.removeAttribute("aria-disabled");
+    } else {
+      element.classList.add("locked");
+      element.style.opacity = "0.55";
+      element.setAttribute("aria-disabled", "true");
+    }
+  });
+
+  document
+    .querySelectorAll(".custom-pro-badge, .pro-badge")
+    .forEach(function(label) {
+      label.textContent = "⭐ PRO";
+    });
+}
+
+
+function openCustomization() {
+  if (!customizationModal) {
+    return;
+  }
+
+  syncCustomizationControls();
+  customizationModal.classList.add("open");
+  customizationModal.setAttribute("aria-hidden", "false");
+}
+
+
+function closeCustomization() {
+  if (!customizationModal) {
+    return;
+  }
+
+  customizationModal.classList.remove("open");
+  customizationModal.setAttribute("aria-hidden", "true");
+}
+
+
+/* THÈMES FREE */
+document
+  .querySelectorAll(".custom-theme-option")
+  .forEach(function(button) {
+    button.addEventListener("click", function() {
+      tkiPersonalization.theme =
+        button.dataset.customTheme ||
+        button.dataset.theme ||
+        "default";
+
+      saveTKIPersonalization();
+      applyTKIPersonalization();
+      syncCustomizationControls();
+    });
+  });
+
+
+/* COULEURS PRÉDÉFINIES FREE */
+document
+  .querySelectorAll(".custom-bubble-color, .bubble-color-option")
+  .forEach(function(button) {
+    button.addEventListener("click", function() {
+      const key =
+        button.dataset.bubbleColor ||
+        button.dataset.color ||
+        "";
+
+      const color =
+        TKI_BUBBLE_COLORS[key] || key;
+
+      if (!color) {
+        return;
+      }
+
+      tkiPersonalization.userBubbleColor = color;
+      saveTKIPersonalization();
+      applyTKIPersonalization();
+      syncCustomizationControls();
+    });
+  });
+
+
+/* COULEURS PERSONNALISÉES PRO */
+if (userBubbleColor) {
+  userBubbleColor.addEventListener("input", function() {
+    if (!isTKIPro()) {
+      syncCustomizationControls();
+      alert(
+        "Cette personnalisation est réservée à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.userBubbleColor =
+      userBubbleColor.value;
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+if (aiBubbleColor) {
+  aiBubbleColor.addEventListener("input", function() {
+    if (!isTKIPro()) {
+      syncCustomizationControls();
+      alert(
+        "Cette personnalisation est réservée à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.aiBubbleColor =
+      aiBubbleColor.value;
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+if (accentColor) {
+  accentColor.addEventListener("input", function() {
+    if (!isTKIPro()) {
+      syncCustomizationControls();
+      alert(
+        "La couleur d'accent personnalisée est réservée à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.accentColor =
+      accentColor.value;
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+/* FOND D'ÉCRAN PRO */
+if (wallpaperButton && wallpaperInput) {
+  wallpaperButton.addEventListener("click", function() {
+    if (!isTKIPro()) {
+      alert(
+        "Le fond d'écran personnalisé est réservé à TKI Pro."
+      );
+      return;
+    }
+
+    wallpaperInput.click();
+  });
+
+  wallpaperInput.addEventListener("change", function() {
+    if (!isTKIPro()) {
+      wallpaperInput.value = "";
+      return;
+    }
+
+    const file = wallpaperInput.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    const maxWallpaperSize =
+      2 * 1024 * 1024;
+
+    if (file.size > maxWallpaperSize) {
+      alert(
+        "Le fond d'écran est trop grand. La taille maximale est de 2 Mo."
+      );
+      wallpaperInput.value = "";
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Veuillez sélectionner une image.");
+      wallpaperInput.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      tkiPersonalization.wallpaper =
+        event.target.result;
+
+      saveTKIPersonalization();
+      applyTKIPersonalization();
+    };
+
+    reader.onerror = function() {
+      alert("Impossible de lire le fond d'écran.");
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+
+if (removeWallpaperButton) {
+  removeWallpaperButton.addEventListener("click", function() {
+    if (!isTKIPro()) {
+      alert(
+        "La personnalisation du fond est réservée à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.wallpaper = "";
+
+    if (wallpaperInput) {
+      wallpaperInput.value = "";
+    }
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+/* ICÔNES PRO */
+if (imageIconSelect) {
+  imageIconSelect.addEventListener("change", function() {
+    if (!isTKIPro()) {
+      syncCustomizationControls();
+      alert(
+        "Le changement d'icône est réservé à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.imageIcon =
+      imageIconSelect.value || "🖼️";
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+if (webIconSelect) {
+  webIconSelect.addEventListener("change", function() {
+    if (!isTKIPro()) {
+      syncCustomizationControls();
+      alert(
+        "Le changement d'icône est réservé à TKI Pro."
+      );
+      return;
+    }
+
+    tkiPersonalization.webIcon =
+      webIconSelect.value || "🌐";
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+}
+
+
+/* BOUTON PERSONNALISATION */
+if (customizationButton) {
+  customizationButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+
+    if (profilePanel) {
+      profilePanel.classList.remove("open");
+    }
+
+    if (appearanceMenu) {
+      appearanceMenu.classList.remove("open");
+    }
+
+    if (languageMenu) {
+      languageMenu.classList.remove("open");
+    }
+
+    if (notificationMenu) {
+      notificationMenu.classList.remove("open");
+    }
+
+    if (settingsMenu) {
+      settingsMenu.classList.remove("open");
+    }
+
+    openCustomization();
+  });
+}
+
+
+if (closeCustomizationButton) {
+  closeCustomizationButton.addEventListener("click", function() {
+    closeCustomization();
+  });
+}
+
+
+if (customizationDoneButton) {
+  customizationDoneButton.addEventListener("click", function() {
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+    closeCustomization();
+  });
+}
+
+
+if (resetCustomizationButton) {
+  resetCustomizationButton.addEventListener("click", function() {
+    const confirmed = confirm(
+      "Réinitialiser toute la personnalisation de TKI ?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    tkiPersonalization = {
+      ...DEFAULT_PERSONALIZATION
+    };
+
+    if (wallpaperInput) {
+      wallpaperInput.value = "";
+    }
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+    syncCustomizationControls();
+  });
+}
+
+
+if (customizationModal) {
+  customizationModal.addEventListener("click", function(event) {
+    if (event.target === customizationModal) {
+      closeCustomization();
+    }
+  });
+}
+
+
+loadTKIPersonalization();
 
 
 function createTKIPlanIndicator() {
@@ -507,10 +1194,37 @@ function createTKIPlanIndicator() {
 
 function updateTKIPlanIndicator(
   used,
-  limit
+  limit,
+  plan = tkiPlan
 ) {
 
   createTKIPlanIndicator();
+
+  tkiPlan =
+    plan === "pro"
+      ? "pro"
+      : "free";
+
+
+  if (
+    tkiPlan === "pro"
+  ) {
+
+    tkiPlanIndicator.textContent =
+      "⭐ TKI Pro";
+
+    tkiPlanIndicator.style.display =
+      "inline-flex";
+
+    tkiPlanIndicator.style.background =
+      "rgba(201, 162, 39, 0.12)";
+
+    tkiPlanIndicator.style.color =
+      "#a47c00";
+
+    return;
+
+  }
 
 
   tkiFreeUsed =
@@ -564,6 +1278,9 @@ function hideTKIPlanIndicator() {
   tkiPlanIndicator.style.display =
     "none";
 
+  tkiPlan =
+    "free";
+
   tkiFreeUsed =
     0;
 
@@ -574,12 +1291,38 @@ function hideTKIPlanIndicator() {
 
 
 function updateUsageFromResponse(
-  usage
+  usage,
+  plan
 ) {
+
+  if (
+    plan === "pro"
+  ) {
+
+    updateTKIPlanIndicator(
+      0,
+      null,
+      "pro"
+    );
+
+    return;
+
+  }
+
+
+  tkiPlan =
+    "free";
+
 
   if (
     !usage
   ) {
+
+    updateTKIPlanIndicator(
+      tkiFreeUsed,
+      tkiFreeLimit,
+      "free"
+    );
 
     return;
 
@@ -590,7 +1333,9 @@ function updateUsageFromResponse(
 
     usage.used,
 
-    usage.limit
+    usage.limit,
+
+    "free"
 
   );
 
@@ -1678,9 +2423,13 @@ auth.onAuthStateChanged(
       );
 
 
+      tkiPlan =
+        "free";
+
       updateTKIPlanIndicator(
         0,
-        TKI_FREE_DEFAULT_LIMIT
+        TKI_FREE_DEFAULT_LIMIT,
+        "free"
       );
 
 
@@ -2411,10 +3160,10 @@ async function sendMessageToGemini(
 
       limitMessage.innerHTML =
         "<strong>Limite TKI Free atteinte</strong><br><br>" +
-        "Tu as utilisé tes " +
+        "Tu as atteint les " +
         data.limit +
-        " messages gratuits aujourd'hui.<br><br>" +
-        "La limite sera réinitialisée demain.";
+        " messages gratuits autorisés dans cette conversation.<br><br>" +
+        "Tu peux continuer avec TKI Pro.";
 
 
       messages.appendChild(
@@ -2458,7 +3207,8 @@ async function sendMessageToGemini(
     ========================= */
 
     updateUsageFromResponse(
-      data.usage
+      data.usage,
+      data.plan
     );
 
 
@@ -4245,3 +4995,10 @@ input.addEventListener(
 
   }
 );
+
+
+/* =========================
+   APPLICATION PERSONNALISATION
+========================= */
+
+applyTKIPersonalization();
