@@ -1,164 +1,603 @@
-<div id="profilePanel" class="profile-panel">
-  <div class="profile-header">
-    <div class="profile-avatar" id="profileAvatar">👤</div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  <title>TKI</title>
+</head>
 
-    <div>
-      <strong id="profileName">Yacine</strong>
-      <p id="profileEmail">Mon compte</p>
+<body>
+
+  <!-- =========================
+       PANNEAU PROFIL
+  ========================== -->
+
+  <div id="profilePanel" class="profile-panel">
+
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar">👤</div>
+
+      <div>
+        <strong id="profileName">Yacine</strong>
+        <p id="profileEmail">Mon compte</p>
+      </div>
     </div>
-  </div>
 
-  <!-- AJOUT FIREBASE : CONNEXION GOOGLE -->
-  <button id="googleLoginButton" class="profile-option">
-    🔐 Se connecter avec Google
-  </button>
-
-  <div class="profile-separator"></div>
-
-  <button id="appearanceButton" class="profile-option">
-    🎨 Apparence
-  </button>
-
-  <div id="appearanceMenu" class="appearance-menu">
-    <button id="lightTheme" class="theme-option">
-      ☀️ Clair
+    <button id="googleLoginButton" class="profile-option" type="button">
+      🔐 Se connecter avec Google
     </button>
 
-    <button id="darkTheme" class="theme-option">
-      🌙 Sombre
-    </button>
-  </div>
+    <div class="profile-separator"></div>
 
-  <button id="languageButton" class="profile-option">
-    🌍 Langue
-  </button>
-
-  <div id="languageMenu" class="language-menu">
-    <button class="language-option" data-language="fr">
-      🇫🇷 Français
+    <button id="appearanceButton" class="profile-option" type="button">
+      🎨 Apparence
     </button>
 
-    <button class="language-option" data-language="en">
-      🇬🇧 English
-    </button>
+    <div id="appearanceMenu" class="appearance-menu">
+      <button id="lightTheme" class="theme-option" type="button">
+        ☀️ Clair
+      </button>
 
-    <button class="language-option" data-language="nl">
-      🇳🇱 Nederlands
-    </button>
-
-    <button class="language-option" data-language="es">
-      🇪🇸 Español
-    </button>
-
-    <button class="language-option" data-language="de">
-      🇩🇪 Deutsch
-    </button>
-  </div>
-
-  <div id="appearanceMenu" class="appearance-menu">
-    <button id="lightTheme" class="theme-option">
-      ☀️ Clair
-    </button>
-
-    <button id="darkTheme" class="theme-option">
-      🌙 Sombre
-    </button>
-  </div>
-
-  <button id="notificationButton" class="profile-option">
-    🔔 Notifications
-  </button>
-
-  <div id="notificationMenu" class="notification-menu">
-
-    <div class="setting-row">
-      <span>🔔 Notifications générales</span>
-
-      <button class="toggle active" data-setting="general">
-        ON
+      <button id="darkTheme" class="theme-option" type="button">
+        🌙 Sombre
       </button>
     </div>
 
-    <div class="setting-row">
-      <span>🤖 Réponses terminées</span>
-
-      <button class="toggle active" data-setting="responses">
-        ON
-      </button>
-    </div>
-
-    <div class="setting-row">
-      <span>🆕 Nouveautés TKI</span>
-
-      <button class="toggle active" data-setting="news">
-        ON
-      </button>
-    </div>
-
-  </div>
-
-  <button id="settingsButton" class="profile-option">
-    ⚙️ Paramètres
-  </button>
-
-  <div id="settingsMenu" class="settings-menu">
-
-    <div class="setting-row">
-      <span>🔊 Sons</span>
-
-      <button class="toggle active" id="soundToggle">
-        ON
-      </button>
-    </div>
-
-    <div class="setting-row">
-      <span>✨ Animations</span>
-
-      <button class="toggle active" id="animationToggle">
-        ON
-      </button>
-    </div>
-
-    <div class="text-size-setting">
-      <span>🔤 Taille du texte</span>
-
-      <select id="textSize">
-        <option value="small">Petit</option>
-        <option value="normal" selected>Normal</option>
-        <option value="large">Grand</option>
-      </select>
-    </div>
-
-    <button id="resetSettings" class="reset-button">
-      🔄 Réinitialiser les paramètres
+    <button id="customizationButton" class="profile-option" type="button">
+      🎨 Personnalisation
     </button>
 
-  </div>
-</div>
+    <button id="languageButton" class="profile-option" type="button">
+      🌍 Langue
+    </button>
 
-<div class="app">
+    <div id="languageMenu" class="language-menu">
+      <button class="language-option" data-language="fr" type="button">
+        🇫🇷 Français
+      </button>
+
+      <button class="language-option" data-language="en" type="button">
+        🇬🇧 English
+      </button>
+
+      <button class="language-option" data-language="nl" type="button">
+        🇳🇱 Nederlands
+      </button>
+
+      <button class="language-option" data-language="es" type="button">
+        🇪🇸 Español
+      </button>
+
+      <button class="language-option" data-language="de" type="button">
+        🇩🇪 Deutsch
+      </button>
+    </div>
+
+    <button id="notificationButton" class="profile-option" type="button">
+      🔔 Notifications
+    </button>
+
+    <div id="notificationMenu" class="notification-menu">
+
+      <div class="setting-row">
+        <span>🔔 Notifications générales</span>
+        <button class="toggle active" data-setting="general" type="button">
+          ON
+        </button>
+      </div>
+
+      <div class="setting-row">
+        <span>🤖 Réponses terminées</span>
+        <button class="toggle active" data-setting="responses" type="button">
+          ON
+        </button>
+      </div>
+
+      <div class="setting-row">
+        <span>🆕 Nouveautés TKI</span>
+        <button class="toggle active" data-setting="news" type="button">
+          ON
+        </button>
+      </div>
+
+    </div>
+
+    <button id="settingsButton" class="profile-option" type="button">
+      ⚙️ Paramètres
+    </button>
+
+    <div id="settingsMenu" class="settings-menu">
+
+      <div class="setting-row">
+        <span>🔊 Sons</span>
+
+        <button
+          class="toggle active"
+          id="soundToggle"
+          type="button"
+        >
+          ON
+        </button>
+      </div>
+
+      <div class="setting-row">
+        <span>✨ Animations</span>
+
+        <button
+          class="toggle active"
+          id="animationToggle"
+          type="button"
+        >
+          ON
+        </button>
+      </div>
+
+      <div class="text-size-setting">
+        <span>🔤 Taille du texte</span>
+
+        <select id="textSize">
+          <option value="small">Petit</option>
+          <option value="normal" selected>Normal</option>
+          <option value="large">Grand</option>
+        </select>
+      </div>
+
+      <button
+        id="resetSettings"
+        class="reset-button"
+        type="button"
+      >
+        🔄 Réinitialiser les paramètres
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       PERSONNALISATION
+  ========================== -->
+
+  <div
+    id="customizationModal"
+    aria-hidden="true"
+  >
+
+    <div class="customization-content">
+
+      <div class="customization-header">
+
+        <div>
+          <h2 id="customizationTitle">
+            🎨 Personnalisation
+          </h2>
+
+          <p class="customization-description">
+            Personnalise l'apparence de TKI.
+          </p>
+        </div>
+
+        <button
+          id="closeCustomizationButton"
+          class="customization-button"
+          type="button"
+          aria-label="Fermer"
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      <!-- THÈMES -->
+
+      <section class="customization-section">
+
+        <h3>🌟 Thèmes TKI</h3>
+
+        <p class="customization-description">
+          Choisis une ambiance prédéfinie pour TKI.
+        </p>
+
+        <button
+          class="custom-theme-option selected"
+          data-custom-theme="default"
+          type="button"
+        >
+          ✨
+          <span>TKI classique</span>
+        </button>
+
+        <button
+          class="custom-theme-option"
+          data-custom-theme="halloween"
+          type="button"
+        >
+          🎃
+          <span>Halloween</span>
+        </button>
+
+        <button
+          class="custom-theme-option"
+          data-custom-theme="christmas"
+          type="button"
+        >
+          🎄
+          <span>Noël</span>
+        </button>
+
+        <button
+          class="custom-theme-option"
+          data-custom-theme="easter"
+          type="button"
+        >
+          🐣
+          <span>Pâques</span>
+        </button>
+
+        <button
+          class="custom-theme-option"
+          data-custom-theme="aid"
+          type="button"
+        >
+          ☪️
+          <span>Aid</span>
+        </button>
+
+      </section>
+
+
+      <!-- COULEURS DES BULLES -->
+
+      <section class="customization-section">
+
+        <h3>💬 Couleur des bulles</h3>
+
+        <p class="customization-description">
+          Choisis une couleur prédéfinie pour tes messages.
+        </p>
+
+        <div class="custom-bubble-colors">
+
+          <button
+            class="custom-bubble-color"
+            data-bubble-color="gold"
+            type="button"
+            style="background:#C9A227;color:white;"
+          >
+            Or
+          </button>
+
+          <button
+            class="custom-bubble-color"
+            data-bubble-color="blue"
+            type="button"
+            style="background:#3b82f6;color:white;"
+          >
+            Bleu
+          </button>
+
+          <button
+            class="custom-bubble-color"
+            data-bubble-color="green"
+            type="button"
+            style="background:#22a06b;color:white;"
+          >
+            Vert
+          </button>
+
+          <button
+            class="custom-bubble-color"
+            data-bubble-color="purple"
+            type="button"
+            style="background:#8b5cf6;color:white;"
+          >
+            Violet
+          </button>
+
+          <button
+            class="custom-bubble-color"
+            data-bubble-color="red"
+            type="button"
+            style="background:#e53935;color:white;"
+          >
+            Rouge
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- PERSONNALISATION PRO -->
+
+      <section class="customization-section">
+
+        <h3>
+          ⭐ Personnalisation avancée
+
+          <span class="custom-pro-badge">
+            PRO
+          </span>
+        </h3>
+
+        <p class="customization-description">
+          Débloque davantage de possibilités avec TKI Pro.
+        </p>
+
+
+        <!-- FOND D'ÉCRAN -->
+
+        <div class="custom-pro-option">
+
+          <h4>
+            🖼️ Fond d'écran personnalisé
+
+            <span class="custom-pro-badge">
+              PRO
+            </span>
+          </h4>
+
+          <p>
+            Utilise ta propre image comme arrière-plan de TKI.
+          </p>
+
+          <input
+            id="wallpaperInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            hidden
+          />
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+
+            <button
+              id="wallpaperButton"
+              class="customization-button primary"
+              type="button"
+            >
+              🖼️ Choisir une image
+            </button>
+
+            <button
+              id="removeWallpaperButton"
+              class="customization-button"
+              type="button"
+            >
+              Retirer
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- COULEURS PERSONNALISÉES -->
+
+        <div class="custom-pro-option">
+
+          <h4>
+            🎨 Couleurs personnalisées
+
+            <span class="custom-pro-badge">
+              PRO
+            </span>
+          </h4>
+
+          <p>
+            Choisis librement les couleurs de tes bulles.
+          </p>
+
+          <label>
+            Moi
+
+            <input
+              id="userBubbleColor"
+              class="customization-color"
+              type="color"
+              value="#C9A227"
+            />
+          </label>
+
+          <label>
+            TKI
+
+            <input
+              id="aiBubbleColor"
+              class="customization-color"
+              type="color"
+              value="#e0e0e0"
+            />
+          </label>
+
+        </div>
+
+
+        <!-- COULEUR PRINCIPALE -->
+
+        <div class="custom-pro-option">
+
+          <h4>
+            ✨ Couleur principale de TKI
+
+            <span class="custom-pro-badge">
+              PRO
+            </span>
+          </h4>
+
+          <p>
+            Personnalise la couleur principale de l'interface.
+          </p>
+
+          <label>
+            Couleur
+
+            <input
+              id="accentColor"
+              class="customization-color"
+              type="color"
+              value="#111111"
+            />
+          </label>
+
+        </div>
+
+
+        <!-- ICÔNE IMAGE -->
+
+        <div class="custom-pro-option">
+
+          <h4>
+            🖼️ Icône Image
+
+            <span class="custom-pro-badge">
+              PRO
+            </span>
+          </h4>
+
+          <p>
+            Choisis l'icône utilisée pour envoyer une image.
+          </p>
+
+          <select
+            id="imageIconSelect"
+            class="customization-select"
+          >
+            <option value="🖼️">
+              🖼️ Image
+            </option>
+
+            <option value="📷">
+              📷 Appareil photo
+            </option>
+
+            <option value="🌄">
+              🌄 Paysage
+            </option>
+
+            <option value="🎨">
+              🎨 Créatif
+            </option>
+          </select>
+
+        </div>
+
+
+        <!-- ICÔNE INTERNET -->
+
+        <div class="custom-pro-option">
+
+          <h4>
+            🌐 Icône Internet
+
+            <span class="custom-pro-badge">
+              PRO
+            </span>
+          </h4>
+
+          <p>
+            Choisis l'icône utilisée pour la recherche Internet.
+          </p>
+
+          <select
+            id="webIconSelect"
+            class="customization-select"
+          >
+            <option value="🌐">
+              🌐 Internet
+            </option>
+
+            <option value="🔎">
+              🔎 Recherche
+            </option>
+
+            <option value="🕸️">
+              🕸️ Web
+            </option>
+
+            <option value="💻">
+              💻 Ordinateur
+            </option>
+          </select>
+
+        </div>
+
+      </section>
+
+
+      <!-- PIED -->
+
+      <div class="customization-footer">
+
+        <button
+          id="resetCustomizationButton"
+          class="customization-button"
+          type="button"
+        >
+          🔄 Réinitialiser
+        </button>
+
+        <button
+          id="closeCustomizationButtonBottom"
+          class="customization-button primary"
+          type="button"
+        >
+          Terminé
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       APPLICATION TKI
+  ========================== -->
 
   <div class="app">
 
-    <button id="menuButton" class="menu-button">
+    <button
+      id="menuButton"
+      class="menu-button"
+      type="button"
+    >
       ☰
     </button>
 
-    <aside class="sidebar" id="sidebar">
 
-      <button class="new-chat" id="newChatButton">
+    <!-- SIDEBAR -->
+
+    <aside
+      class="sidebar"
+      id="sidebar"
+    >
+
+      <button
+        class="new-chat"
+        id="newChatButton"
+        type="button"
+      >
         ＋ Nouvelle discussion
       </button>
 
       <div class="history">
+
         <p class="history-title">
           Discussions
         </p>
 
         <div id="conversationList"></div>
+
       </div>
 
     </aside>
+
+
+    <!-- BARRE DU HAUT -->
 
     <header class="topbar">
 
@@ -166,46 +605,44 @@
         TKI
       </div>
 
-      <button id="profileButton" class="profile">
+      <button
+        id="profileButton"
+        class="profile"
+        type="button"
+        aria-label="Ouvrir le profil"
+      >
         👤
       </button>
 
     </header>
 
+
+    <!-- CHAT -->
+
     <main class="chat">
 
-      <aside class="sidebar">
+      <!-- ACCUEIL CORRIGÉ : prénom dans le titre + ✨ -->
 
-        <button class="new-chat">
-          ＋ Nouvelle discussion
-        </button>
+      <div
+        id="welcomeMessage"
+        class="welcome"
+      >
+        <h1>
+          Bonjour, <span id="username">Yacine</span> ✨
+        </h1>
+      </div>
 
-        <div class="history">
 
-          <p class="history-title">
-            Discussions
-          </p>
+      <div
+        id="messages"
+        class="messages"
+      ></div>
 
-          <div id="conversationList"></div>
-
-        </div>
-
-      </aside>
-
-      <h1 id="welcomeMessage">
-        Bonjour,
-        <span id="username">
-          comment puis-je vous aider ?
-        </span>
-        ✨
-      </h1>
-
-      <div id="messages" class="messages"></div>
 
       <!-- BARRE DE QUESTION -->
+
       <div class="input-box">
 
-        <!-- BOUTON IMAGE -->
         <button
           id="imageButton"
           class="image-button"
@@ -215,7 +652,6 @@
           🖼️
         </button>
 
-        <!-- INPUT IMAGE -->
         <input
           id="imageInput"
           type="file"
@@ -223,7 +659,7 @@
           hidden
         />
 
-        <!-- RECHERCHE INTERNET -->
+
         <button
           id="webSearchButton"
           class="web-search-button"
@@ -233,19 +669,29 @@
           🌐
         </button>
 
+
         <input
           id="messageInput"
           type="text"
           placeholder="Posez votre question..."
+          autocomplete="off"
         />
 
-        <button id="sendButton" class="send">
+
+        <button
+          id="sendButton"
+          class="send"
+          type="button"
+          aria-label="Envoyer"
+        >
           ➤
         </button>
 
       </div>
 
+
       <!-- APERÇU IMAGE -->
+
       <div
         id="imagePreviewContainer"
         class="image-preview-container"
@@ -272,40 +718,18 @@
 
   </div>
 
-</div>
 
-<!DOCTYPE html>
-<html lang="en">
+  <!-- =========================
+       FIREBASE
+  ========================== -->
 
-<head>
-
-  <meta charset="UTF-8">
-
-  <link
-    rel="stylesheet"
-    href="./style.css"
-  >
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Pen</title>
-
-</head>
-
-<body>
-
-  <!-- AJOUT FIREBASE -->
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app-compat.js"></script>
-
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-auth-compat.js"></script>
-
   <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore-compat.js"></script>
+
+  <!-- TKI -->
 
   <script src="./script.js"></script>
 
 </body>
-
 </html>
