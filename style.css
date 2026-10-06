@@ -1747,45 +1747,57 @@ body.tki-theme-halloween .send {
 }
 
 
+/* =========================
+   NOËL — BLEU GLACÉ
+========================= */
+
 body.tki-theme-christmas {
-  --tki-user-bubble: #c62828;
+  --tki-user-bubble: #3B82F6;
   --tki-ai-bubble: #e8e8e8;
-  --tki-accent: #c62828;
+  --tki-accent: #3B82F6;
 }
 
 body.tki-theme-christmas .logo {
-  color: #c62828;
+  color: #3B82F6;
 }
 
 body.tki-theme-christmas .topbar {
-  border-bottom-color: #c62828;
+  border-bottom-color: #3B82F6;
 }
 
 body.tki-theme-christmas .new-chat,
 body.tki-theme-christmas .send {
-  background: #c62828;
+  background: #3B82F6;
 }
 
 
-body.tki-theme-easter {
+/* =========================
+   NOUVEL AN
+========================= */
+
+body.tki-theme-newyear {
   --tki-user-bubble: #9b59b6;
   --tki-ai-bubble: #eeeeee;
   --tki-accent: #9b59b6;
 }
 
-body.tki-theme-easter .logo {
+body.tki-theme-newyear .logo {
   color: #9b59b6;
 }
 
-body.tki-theme-easter .topbar {
+body.tki-theme-newyear .topbar {
   border-bottom-color: #9b59b6;
 }
 
-body.tki-theme-easter .new-chat,
-body.tki-theme-easter .send {
+body.tki-theme-newyear .new-chat,
+body.tki-theme-newyear .send {
   background: #9b59b6;
 }
 
+
+/* =========================
+   AÏD
+========================= */
 
 body.tki-theme-aid {
   --tki-user-bubble: #159957;
@@ -1952,5 +1964,176 @@ body.dark-mode .custom-bubble-color.selected {
 
   .customization-button {
     width: 100%;
+  }
+}
+
+
+/* =========================
+   DÉCORATIONS DES THÈMES
+========================= */
+
+
+/* =========================
+   HALLOWEEN
+========================= */
+
+.halloween-pumpkin {
+  display: none;
+
+  position: fixed;
+
+  left: 09%;
+
+  /* Positionnée au niveau des boutons image + recherche */
+  bottom: 78px;
+
+  transform: translateX(-50%);
+
+  font-size: 38px;
+
+  z-index: 1000;
+
+  pointer-events: none;
+  user-select: none;
+
+  animation: pumpkinFloat 2.5s ease-in-out infinite;
+}
+
+body.tki-theme-halloween .halloween-pumpkin {
+  display: block;
+}
+
+@keyframes pumpkinFloat {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+
+/* =========================
+   NOËL
+========================= */
+
+.christmas-snowman {
+  display: none;
+
+  position: fixed;
+
+  left: 09%;
+  bottom: 78px;
+
+  transform: translateX(-50%);
+
+  font-size: 38px;
+
+  z-index: 1000;
+
+  pointer-events: none;
+  user-select: none;
+
+  animation: christmasFloat 2.5s ease-in-out infinite;
+}
+
+body.tki-theme-christmas .christmas-snowman {
+  display: block;
+}
+
+@keyframes christmasFloat {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+
+/* =========================
+   NOUVEL AN
+========================= */
+
+.newyear-decoration {
+  display: none;
+
+  position: fixed;
+
+  left: 09%;
+  bottom: 78px;
+
+  transform: translateX(-50%);
+
+  font-size: 38px;
+
+  z-index: 1000;
+
+  pointer-events: none;
+  user-select: none;
+
+  animation: newyearFloat 2.5s ease-in-out infinite;
+}
+
+body.tki-theme-newyear .newyear-decoration {
+  display: block;
+}
+
+@keyframes newyearFloat {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+
+/* =========================
+   AÏD
+========================= */
+
+.aid-decoration {
+  display: none;
+
+  position: fixed;
+
+  left: 09%;
+  bottom: 78px;
+
+  transform: translateX(-50%);
+
+  font-size: 32px;
+
+  z-index: 1000;
+
+  pointer-events: none;
+  user-select: none;
+
+  animation: aidFloat 2.5s ease-in-out infinite;
+}
+
+body.tki-theme-aid .aid-decoration {
+  display: block;
+}
+
+@keyframes aidFloat {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(2deg);
   }
 }
