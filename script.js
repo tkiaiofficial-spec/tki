@@ -539,8 +539,32 @@ function loadTKIPersonalization() {
       ...(parsed || {})
     };
 
+    /*
+      MIGRATION :
+
+      L'ancien thème "Pâques" est remplacé
+      définitivement par "Nouvelle année".
+
+      Si un ancien réglage "easter" existe
+      encore dans le navigateur, il devient
+      automatiquement "newyear".
+    */
+
     if (
-      !["default", "halloween", "christmas", "easter", "aid"].includes(
+      tkiPersonalization.theme === "easter"
+    ) {
+      tkiPersonalization.theme =
+        "newyear";
+    }
+
+    if (
+      ![
+        "default",
+        "halloween",
+        "christmas",
+        "newyear",
+        "aid"
+      ].includes(
         tkiPersonalization.theme
       )
     ) {
@@ -588,10 +612,6 @@ function saveTKIPersonalization() {
       error
     );
 
-    /*
-      Un fond trop lourd peut dépasser la capacité
-      de localStorage. On conserve les autres réglages.
-    */
     if (tkiPersonalization.wallpaper) {
       tkiPersonalization.wallpaper = "";
 
@@ -618,18 +638,17 @@ function applyTKIPersonalization() {
     return;
   }
 
-  /* THÈMES */
   body.classList.remove(
     "tki-theme-halloween",
     "tki-theme-christmas",
-    "tki-theme-easter",
+    "tki-theme-newyear",
     "tki-theme-aid"
   );
 
   const themeClass = {
     halloween: "tki-theme-halloween",
     christmas: "tki-theme-christmas",
-    easter: "tki-theme-easter",
+    newyear: "tki-theme-newyear",
     aid: "tki-theme-aid"
   }[tkiPersonalization.theme];
 
@@ -637,7 +656,6 @@ function applyTKIPersonalization() {
     body.classList.add(themeClass);
   }
 
-  /* COULEURS DES BULLES */
   if (isValidColor(tkiPersonalization.userBubbleColor)) {
     body.style.setProperty(
       "--tki-user-bubble",
@@ -656,7 +674,6 @@ function applyTKIPersonalization() {
     body.style.removeProperty("--tki-ai-bubble");
   }
 
-  /* COULEUR D'ACCENT PRO */
   if (isValidColor(tkiPersonalization.accentColor)) {
     body.style.setProperty(
       "--tki-accent",
@@ -666,7 +683,6 @@ function applyTKIPersonalization() {
     body.style.removeProperty("--tki-accent");
   }
 
-  /* FOND D'ÉCRAN PRO */
   if (
     isTKIPro() &&
     tkiPersonalization.wallpaper
@@ -681,7 +697,6 @@ function applyTKIPersonalization() {
     body.style.removeProperty("--tki-wallpaper");
   }
 
-  /* ICÔNES PRO */
   if (imageButton) {
     imageButton.textContent =
       tkiPersonalization.imageIcon || "🖼️";
@@ -2423,14 +2438,99 @@ auth.onAuthStateChanged(
       );
 
 
-      tkiPlan =
-        "free";
+      /*
+        AFFICHAGE IMMÉDIAT DU PLAN
+
+        Dès que Firebase confirme que l'utilisateur
+        est connecté, le badge Free apparaît
+        immédiatement.
+
+        Ensuite, TKI demande le vrai statut au serveur.
+        Si le compte est Pro, le badge devient
+        ⭐ TKI Pro dès que la réponse arrive.
+      */
 
       updateTKIPlanIndicator(
         0,
         TKI_FREE_DEFAULT_LIMIT,
         "free"
       );
+
+      applyTKIPersonalization();
+
+
+      /*
+        RÉCUPÉRATION DU VRAI PLAN
+      */
+
+      try {
+
+        const planData =
+          await apiFetch(
+            "/api/user-plan"
+          );
+
+
+        const currentPlan =
+          planData?.plan === "pro"
+            ? "pro"
+            : "free";
+
+
+        if (
+          currentPlan === "pro"
+        ) {
+
+          updateTKIPlanIndicator(
+            0,
+            null,
+            "pro"
+          );
+
+        } else {
+
+          updateTKIPlanIndicator(
+            Number(
+              planData?.used
+            ) || 0,
+
+            Number(
+              planData?.limit
+            ) ||
+              TKI_FREE_DEFAULT_LIMIT,
+
+            "free"
+          );
+
+        }
+
+
+        applyTKIPersonalization();
+
+
+      } catch (planError) {
+
+        console.error(
+          "Impossible de récupérer le plan TKI au chargement :",
+          planError
+        );
+
+
+        /*
+          En cas d'erreur, le badge Free reste
+          visible au lieu de disparaître.
+        */
+
+        updateTKIPlanIndicator(
+          0,
+          TKI_FREE_DEFAULT_LIMIT,
+          "free"
+        );
+
+
+        applyTKIPersonalization();
+
+      }
 
 
       const firstName =
@@ -3003,13 +3103,6 @@ async function sendMessageToGemini(
 
     const requestBody = {
 
-      /*
-        CORRECTION PRINCIPALE :
-
-        Le backend demande maintenant
-        l'identifiant de la conversation.
-      */
-
       conversationId:
         conversation.id,
 
@@ -3314,19 +3407,9 @@ async function sendMessageToGemini(
     thinkingMessage.remove();
 
 
-    /*
-      Garder le message utilisateur
-      en local en cas d'erreur technique.
-    */
-
     const errorMessage =
       "Désolé, une erreur technique est survenue.";
 
-
-    /*
-      On affiche l'erreur sans
-      la sauvegarder dans Supabase.
-    */
 
     addMessage(
 
