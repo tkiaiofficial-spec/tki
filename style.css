@@ -115,7 +115,7 @@ body {
 
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
 
-  z-index: 1000;
+  z-index: 1002;
 }
 
 
@@ -140,7 +140,15 @@ body {
 
   transition: left 0.25s ease;
 
-  z-index: 999;
+  overflow-y: hidden;
+
+  /* Le volet passe au-dessus des décorations */
+  z-index: 1001;
+}
+
+.sidebar.open {
+  left: 0;
+  overflow-y: auto;
 }
 
 .sidebar.open {
@@ -341,6 +349,8 @@ body {
 .input-box input {
   flex: 1;
 
+  min-width: 0;
+
   border: none;
 
   outline: none;
@@ -354,6 +364,8 @@ body {
   width: 42px;
   height: 42px;
 
+  min-width: 42px;
+
   border: none;
 
   border-radius: 50%;
@@ -365,6 +377,13 @@ body {
   font-size: 18px;
 
   cursor: pointer;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
 }
 
 
@@ -375,6 +394,8 @@ body {
 .image-button {
   width: 40px;
   height: 40px;
+
+  min-width: 40px;
 
   flex-shrink: 0;
 
@@ -409,7 +430,10 @@ body {
 
 .web-search-button {
   width: 40px;
+
   height: 40px;
+
+  min-width: 40px;
 
   flex-shrink: 0;
 
@@ -1079,6 +1103,60 @@ body.dark-mode .web-source-link {
     max-width: 140px;
 
     max-height: 110px;
+  }
+
+  /* BARRE DE SAISIE MOBILE */
+  .input-box {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    padding: 7px 7px 7px 10px;
+
+    gap: 4px;
+
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .input-box input {
+    flex: 1 1 auto;
+
+    min-width: 0;
+
+    width: auto;
+  }
+
+  .image-button,
+  .web-search-button {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+
+    flex-shrink: 0;
+
+    font-size: 18px;
+  }
+
+  .send {
+    width: 36px;
+    height: 36px;
+
+    min-width: 36px;
+
+    max-width: 36px;
+
+    flex-shrink: 0;
+
+    padding: 0;
+
+    font-size: 17px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -1824,6 +1902,8 @@ body.tki-theme-aid .send {
 ========================= */
 
 body.tki-custom-wallpaper {
+  background-image: var(--tki-wallpaper);
+
   background-size: cover;
 
   background-position: center;
@@ -2108,6 +2188,7 @@ body.tki-theme-newyear .newyear-decoration {
   position: fixed;
 
   left: 09%;
+
   bottom: 78px;
 
   transform: translateX(-50%);
@@ -2136,4 +2217,93 @@ body.tki-theme-aid .aid-decoration {
   50% {
     transform: translateY(-5px) rotate(2deg);
   }
+}
+/* =========================
+   FLOU DU FOND D'ÉCRAN
+========================= */
+
+.wallpaper-blur-control {
+  margin-top: 14px;
+}
+
+.wallpaper-blur-control label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.wallpaper-blur-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.wallpaper-blur-row input[type="range"] {
+  flex: 1;
+
+  width: 100%;
+
+  cursor: pointer;
+}
+
+.wallpaper-blur-row span {
+  min-width: 42px;
+
+  text-align: right;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+/* =========================
+   FOND FLOUTÉ
+========================= */
+
+body.tki-custom-wallpaper {
+  position: relative;
+
+  background-image: none;
+
+  --tki-wallpaper-blur: 0px;
+}
+
+body.tki-custom-wallpaper::before {
+  content: "";
+
+  position: fixed;
+
+  top: -25px;
+  left: -25px;
+  right: -25px;
+  bottom: -25px;
+
+  background-image: var(--tki-wallpaper);
+
+  background-size: cover;
+
+  background-position: center;
+
+  background-repeat: no-repeat;
+
+  filter: blur(var(--tki-wallpaper-blur));
+
+  transform: scale(1.03);
+
+  pointer-events: none;
+
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+
+  z-index: 1;
 }
