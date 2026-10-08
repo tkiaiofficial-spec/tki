@@ -1,3 +1,4 @@
+const TKI_APPEARANCE_KEY = "tki_appearance";
 const input = document.querySelector("#messageInput");
 const sendButton = document.querySelector("#sendButton");
 const messages = document.querySelector("#messages");
@@ -16,6 +17,34 @@ const appearanceMenu = document.querySelector("#appearanceMenu");
 
 const lightTheme = document.querySelector("#lightTheme");
 const darkTheme = document.querySelector("#darkTheme");
+
+
+/* =========================
+   CHARGER LE THÈME MÉMORISÉ
+========================= */
+
+const savedTheme =
+  localStorage.getItem(
+    TKI_APPEARANCE_KEY
+  );
+
+
+if (
+  savedTheme === "dark"
+) {
+
+  document.body.classList.add(
+    "dark-mode"
+  );
+
+} else {
+
+  document.body.classList.remove(
+    "dark-mode"
+  );
+
+}
+
 
 const languageButton = document.querySelector("#languageButton");
 const languageMenu = document.querySelector("#languageMenu");
@@ -444,7 +473,7 @@ const closeCustomizationButton =
   document.querySelector("#closeCustomizationButton");
 
 const customizationDoneButton =
-  document.querySelector("#customizationDoneButton");
+  document.querySelector("#closeCustomizationButtonBottom");
 
 const resetCustomizationButton =
   document.querySelector("#resetCustomizationButton");
@@ -480,11 +509,17 @@ const TKI_PERSONALIZATION_KEY =
 
 const DEFAULT_PERSONALIZATION = {
   theme: "default",
+  themeBackgrounds: {
+    default: false,
+    halloween: false,
+    christmas: false,
+    newyear: false,
+    aid: false
+  },
   userBubbleColor: "",
   aiBubbleColor: "",
   accentColor: "",
   wallpaper: "",
-  wallpaperBlur: 0,
   imageIcon: "🖼️",
   webIcon: "🌐"
 };
@@ -572,6 +607,36 @@ function loadTKIPersonalization() {
       tkiPersonalization.theme = "default";
     }
 
+    /*
+      FONDS D'ÉCRAN DES THÈMES
+
+      Chaque thème possède son propre réglage ON/OFF.
+      Les réglages sont conservés séparément du thème choisi.
+    */
+    const savedThemeBackgrounds =
+      tkiPersonalization.themeBackgrounds;
+
+    tkiPersonalization.themeBackgrounds = {
+      ...DEFAULT_PERSONALIZATION.themeBackgrounds,
+      ...(
+        savedThemeBackgrounds &&
+        typeof savedThemeBackgrounds === "object"
+          ? savedThemeBackgrounds
+          : {}
+      )
+    };
+
+    [
+      "default",
+      "halloween",
+      "christmas",
+      "newyear",
+      "aid"
+    ].forEach(function(theme) {
+      tkiPersonalization.themeBackgrounds[theme] =
+        tkiPersonalization.themeBackgrounds[theme] === true;
+    });
+
     if (
       !["🖼️", "📷", "🎨", "🌄", "🔍"].includes(
         tkiPersonalization.imageIcon
@@ -657,6 +722,29 @@ function applyTKIPersonalization() {
     body.classList.add(themeClass);
   }
 
+  /* FONDS D'ÉCRAN DES THÈMES */
+  body.classList.remove(
+    "tki-theme-background-halloween",
+    "tki-theme-background-christmas",
+    "tki-theme-background-newyear",
+    "tki-theme-background-aid"
+  );
+
+  const activeTheme =
+    tkiPersonalization.theme;
+
+  if (
+    activeTheme &&
+    activeTheme !== "default" &&
+    tkiPersonalization.themeBackgrounds &&
+    tkiPersonalization.themeBackgrounds[activeTheme] === true
+  ) {
+    body.classList.add(
+      "tki-theme-background-" +
+      activeTheme
+    );
+  }
+
   if (isValidColor(tkiPersonalization.userBubbleColor)) {
     body.style.setProperty(
       "--tki-user-bubble",
@@ -684,25 +772,19 @@ function applyTKIPersonalization() {
     body.style.removeProperty("--tki-accent");
   }
 
-  if (isTKIPro() && tkiPersonalization.wallpaper) {
-  body.classList.add("tki-custom-wallpaper");
-
-  body.style.setProperty(
-    "--tki-wallpaper",
-    `url("${tkiPersonalization.wallpaper}")`
-  );
-
-  body.style.setProperty(
-    "--tki-wallpaper-blur",
-    `${Number(tkiPersonalization.wallpaperBlur) || 0}px`
-  );
-} else {
-  body.classList.remove("tki-custom-wallpaper");
-
-  body.style.removeProperty("--tki-wallpaper");
-
-  body.style.removeProperty("--tki-wallpaper-blur");
-}
+  if (
+    isTKIPro() &&
+    tkiPersonalization.wallpaper
+  ) {
+    body.classList.add("tki-custom-wallpaper");
+    body.style.setProperty(
+      "--tki-wallpaper",
+      `url("${tkiPersonalization.wallpaper}")`
+    );
+  } else {
+    body.classList.remove("tki-custom-wallpaper");
+    body.style.removeProperty("--tki-wallpaper");
+  }
 
   if (imageButton) {
     imageButton.textContent =
@@ -747,6 +829,29 @@ function syncCustomizationControls() {
         "selected",
         colorValue === tkiPersonalization.userBubbleColor
       );
+    });
+
+  /* SYNCHRONISER LES BOUTONS FOND D'ÉCRAN DES THÈMES */
+  document
+    .querySelectorAll(".theme-background-toggle")
+    .forEach(function(button) {
+      const theme =
+        button.dataset.themeBackground ||
+        "";
+
+      const isEnabled =
+        !!(
+          tkiPersonalization.themeBackgrounds &&
+          tkiPersonalization.themeBackgrounds[theme] === true
+        );
+
+      button.classList.toggle(
+        "active",
+        isEnabled
+      );
+
+      button.textContent =
+        isEnabled ? "ON" : "OFF";
     });
 
   if (userBubbleColor) {
@@ -973,100 +1078,21 @@ if (wallpaperButton && wallpaperInput) {
       return;
     }
 
-const reader = new FileReader();
+    const reader = new FileReader();
 
-reader.onload = function(event) {
+    reader.onload = function(event) {
+      tkiPersonalization.wallpaper =
+        event.target.result;
 
-  const img = new Image();
+      saveTKIPersonalization();
+      applyTKIPersonalization();
+    };
 
-  img.onload = function() {
+    reader.onerror = function() {
+      alert("Impossible de lire le fond d'écran.");
+    };
 
-    const canvas =
-      document.createElement("canvas");
-
-    const maxWidth = 1920;
-    const maxHeight = 1080;
-
-    let width = img.width;
-    let height = img.height;
-
-    if (
-      width > maxWidth ||
-      height > maxHeight
-    ) {
-
-      const ratio =
-        Math.min(
-          maxWidth / width,
-          maxHeight / height
-        );
-
-      width =
-        Math.round(
-          width * ratio
-        );
-
-      height =
-        Math.round(
-          height * ratio
-        );
-
-    }
-
-    canvas.width =
-      width;
-
-    canvas.height =
-      height;
-
-    const context =
-      canvas.getContext("2d");
-
-    context.drawImage(
-      img,
-      0,
-      0,
-      width,
-      height
-    );
-
-    const compressedWallpaper =
-      canvas.toDataURL(
-        "image/jpeg",
-        0.80
-      );
-
-    tkiPersonalization.wallpaper =
-      compressedWallpaper;
-
-    saveTKIPersonalization();
-
-    applyTKIPersonalization();
-
-  };
-
-  img.onerror = function() {
-
-    alert(
-      "Impossible de lire le fond d'écran."
-    );
-
-  };
-
-  img.src =
-    event.target.result;
-
-};
-
-reader.onerror = function() {
-
-  alert(
-    "Impossible de lire le fond d'écran."
-  );
-
-};
-
-reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
   });
 }
 
@@ -1089,86 +1115,6 @@ if (removeWallpaperButton) {
     saveTKIPersonalization();
     applyTKIPersonalization();
   });
-}
-/* FLOU DU FOND D'ÉCRAN PRO */
-
-if (wallpaperButton) {
-  const wallpaperSection =
-    wallpaperButton.closest(".custom-pro-option");
-
-  if (wallpaperSection) {
-
-    const blurContainer =
-      document.createElement("div");
-
-    blurContainer.className =
-      "wallpaper-blur-control";
-
-    blurContainer.innerHTML = `
-      <label for="wallpaperBlur">
-        Flou du fond d'écran
-      </label>
-
-      <div class="wallpaper-blur-row">
-        <input
-          type="range"
-          id="wallpaperBlur"
-          min="0"
-          max="100"
-          value="${Number(tkiPersonalization.wallpaperBlur) || 0}"
-        >
-
-        <span id="wallpaperBlurValue">
-          ${Number(tkiPersonalization.wallpaperBlur) || 0}%
-        </span>
-      </div>
-    `;
-
-    wallpaperSection.appendChild(
-      blurContainer
-    );
-
-    const wallpaperBlur =
-      document.querySelector("#wallpaperBlur");
-
-    const wallpaperBlurValue =
-      document.querySelector("#wallpaperBlurValue");
-
-    wallpaperBlur.addEventListener(
-      "input",
-      function() {
-
-        if (!isTKIPro()) {
-          return;
-        }
-
-        const value =
-          Number(wallpaperBlur.value);
-
-        wallpaperBlurValue.textContent =
-          `${value}%`;
-
-        tkiPersonalization.wallpaperBlur =
-          value;
-
-        applyTKIPersonalization();
-
-      }
-    );
-
-    wallpaperBlur.addEventListener(
-      "change",
-      function() {
-
-        if (!isTKIPro()) {
-          return;
-        }
-
-        saveTKIPersonalization();
-
-      }
-    );
-  }
 }
 
 
@@ -1209,6 +1155,43 @@ if (webIconSelect) {
     applyTKIPersonalization();
   });
 }
+
+
+/* FONDS D'ÉCRAN DES THÈMES */
+document
+  .querySelectorAll(".theme-background-toggle")
+  .forEach(function(button) {
+    button.addEventListener("click", function(event) {
+      event.stopPropagation();
+
+      const theme =
+        button.dataset.themeBackground ||
+        "";
+
+      if (
+        !theme ||
+        !Object.prototype.hasOwnProperty.call(
+          DEFAULT_PERSONALIZATION.themeBackgrounds,
+          theme
+        )
+      ) {
+        return;
+      }
+
+      if (!tkiPersonalization.themeBackgrounds) {
+        tkiPersonalization.themeBackgrounds = {
+          ...DEFAULT_PERSONALIZATION.themeBackgrounds
+        };
+      }
+
+      tkiPersonalization.themeBackgrounds[theme] =
+        !tkiPersonalization.themeBackgrounds[theme];
+
+      saveTKIPersonalization();
+      applyTKIPersonalization();
+      syncCustomizationControls();
+    });
+  });
 
 
 /* BOUTON PERSONNALISATION */
@@ -1268,8 +1251,23 @@ if (resetCustomizationButton) {
     }
 
     tkiPersonalization = {
-      ...DEFAULT_PERSONALIZATION
+      ...DEFAULT_PERSONALIZATION,
+      themeBackgrounds: {
+        ...DEFAULT_PERSONALIZATION.themeBackgrounds
+      }
     };
+
+
+    /* RETOUR AU MODE CLAIR */
+    document.body.classList.remove(
+      "dark-mode"
+    );
+
+    localStorage.setItem(
+      TKI_APPEARANCE_KEY,
+      "light"
+    );
+
 
     if (wallpaperInput) {
       wallpaperInput.value = "";
@@ -1745,35 +1743,7 @@ let conversations = [];
 let currentConversationId =
   null;
 
-function updateTKIDecorationsVisibility(
-  hide
-) {
 
-  const decorationSelectors = [
-    ".halloween-pumpkin",
-    ".christmas-snowman",
-    ".newyear-decoration",
-    ".aid-decoration"
-  ];
-
-  decorationSelectors.forEach(
-    function(selector) {
-
-      document
-        .querySelectorAll(selector)
-        .forEach(
-          function(decoration) {
-
-            decoration.style.display =
-              hide ? "none" : "";
-
-          }
-        );
-
-    }
-  );
-
-}
 let guestConversation =
   null;
 
@@ -2636,8 +2606,7 @@ auth.onAuthStateChanged(
         AFFICHAGE IMMÉDIAT DU PLAN
 
         Dès que Firebase confirme que l'utilisateur
-        est connecté, le badge Free apparaît
-        immédiatement.
+        est connecté, le badge Free apparaît immédiatement.
 
         Ensuite, TKI demande le vrai statut au serveur.
         Si le compte est Pro, le badge devient
@@ -4866,17 +4835,21 @@ appearanceButton.addEventListener(
 
     event.stopPropagation();
 
+
     appearanceMenu.classList.toggle(
       "open"
     );
+
 
     languageMenu.classList.remove(
       "open"
     );
 
+
     notificationMenu.classList.remove(
       "open"
     );
+
 
     settingsMenu.classList.remove(
       "open"
@@ -4889,62 +4862,30 @@ appearanceButton.addEventListener(
 lightTheme.addEventListener(
   "click",
   function() {
-
     document.body.classList.remove(
       "dark-mode"
     );
 
     localStorage.setItem(
-      "tki_theme_mode",
+      TKI_APPEARANCE_KEY,
       "light"
     );
-
   }
 );
-
 
 darkTheme.addEventListener(
   "click",
   function() {
-
     document.body.classList.add(
       "dark-mode"
     );
 
     localStorage.setItem(
-      "tki_theme_mode",
+      TKI_APPEARANCE_KEY,
       "dark"
     );
-
   }
 );
-
-
-/* =========================
-   CHARGER LE MODE CLAIR / SOMBRE
-========================= */
-
-const savedThemeMode =
-  localStorage.getItem(
-    "tki_theme_mode"
-  );
-
-
-if (
-  savedThemeMode === "dark"
-) {
-
-  document.body.classList.add(
-    "dark-mode"
-  );
-
-} else {
-
-  document.body.classList.remove(
-    "dark-mode"
-  );
-
-}
 
 
 /* =========================
@@ -5165,7 +5106,7 @@ resetSettings.addEventListener(
 
     /* Retour au mode clair par défaut */
     localStorage.setItem(
-      "tki_theme_mode",
+      TKI_APPEARANCE_KEY,
       "light"
     );
 
