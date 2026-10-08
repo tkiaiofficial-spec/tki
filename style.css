@@ -344,6 +344,10 @@ body {
   border-radius: 25px;
 
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+
+  position: relative;
+
+  z-index: 1001;
 }
 
 .input-box input {
@@ -2218,6 +2222,8 @@ body.tki-theme-aid .aid-decoration {
     transform: translateY(-5px) rotate(2deg);
   }
 }
+
+
 /* =========================
    FLOU DU FOND D'ÉCRAN
 ========================= */
@@ -2304,6 +2310,35 @@ body.tki-custom-wallpaper::before {
 
 .app {
   position: relative;
+}
+.custom-theme-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  z-index: 1;
+.custom-theme-row .custom-theme-option {
+  flex: 1;
+}
+
+.custom-theme-background {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-theme-background > span {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.theme-background-toggle {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
 }
