@@ -520,6 +520,7 @@ const DEFAULT_PERSONALIZATION = {
   aiBubbleColor: "",
   accentColor: "",
   wallpaper: "",
+  wallpaperBlur: 0,
   imageIcon: "🖼️",
   webIcon: "🌐"
 };
@@ -574,6 +575,13 @@ function loadTKIPersonalization() {
       ...DEFAULT_PERSONALIZATION,
       ...(parsed || {})
     };
+    tkiPersonalization.wallpaperBlur = Math.max(
+  0,
+  Math.min(
+    100,
+    Number(tkiPersonalization.wallpaperBlur) || 0
+  )
+);
 
     /*
       MIGRATION :
@@ -772,19 +780,36 @@ function applyTKIPersonalization() {
     body.style.removeProperty("--tki-accent");
   }
 
-  if (
+ if (
     isTKIPro() &&
     tkiPersonalization.wallpaper
   ) {
     body.classList.add("tki-custom-wallpaper");
+
     body.style.setProperty(
       "--tki-wallpaper",
       `url("${tkiPersonalization.wallpaper}")`
     );
+
+    const wallpaperBlur = Math.max(
+      0,
+      Math.min(
+        100,
+        Number(tkiPersonalization.wallpaperBlur) || 0
+      )
+    );
+
+    body.style.setProperty(
+      "--tki-wallpaper-blur",
+      `${wallpaperBlur / 5}px`
+    );
   } else {
     body.classList.remove("tki-custom-wallpaper");
+
     body.style.removeProperty("--tki-wallpaper");
+    body.style.removeProperty("--tki-wallpaper-blur");
   }
+
 
   if (imageButton) {
     imageButton.textContent =
@@ -1095,6 +1120,69 @@ if (wallpaperButton && wallpaperInput) {
     reader.readAsDataURL(file);
   });
 }
+/* JAUGE DE FLOU DU FOND D'ÉCRAN PRO */
+(function() {
+  const wallpaperButton = document.getElementById("wallpaperButton");
+
+  if (!wallpaperButton || document.getElementById("wallpaperBlurControl")) {
+    return;
+  }
+
+  const container = document.createElement("div");
+  container.id = "wallpaperBlurControl";
+  container.style.marginTop = "12px";
+
+  container.innerHTML = `
+    <label for="wallpaperBlurSlider"
+      style="display:block; margin-bottom:8px;">
+      Flou du fond d’écran ⭐ PRO
+      <span id="wallpaperBlurValue">0</span>
+    </label>
+    <input
+      id="wallpaperBlurSlider"
+      type="range"
+      min="0"
+      max="100"
+      step="1"
+      value="0"
+      style="width:100%; cursor:pointer;"
+    >
+  `;
+
+  document
+  .querySelector("#wallpaperButton")
+  .closest(".custom-pro-option")
+  .appendChild(container);
+
+  const slider = document.getElementById("wallpaperBlurSlider");
+  const value = document.getElementById("wallpaperBlurValue");
+
+  function syncWallpaperBlur() {
+    const blur = Math.max(
+      0,
+      Math.min(100, Number(tkiPersonalization.wallpaperBlur) || 0)
+    );
+
+    slider.value = blur;
+    value.textContent = blur + "%";
+  }
+
+  slider.addEventListener("input", function() {
+    if (!isTKIPro()) {
+      alert("Le flou du fond d’écran est réservé à TKI Pro.");
+      syncWallpaperBlur();
+      return;
+    }
+
+    tkiPersonalization.wallpaperBlur = Number(slider.value);
+    value.textContent = slider.value + "%";
+
+    saveTKIPersonalization();
+    applyTKIPersonalization();
+  });
+
+  syncWallpaperBlur();
+})();
 
 
 if (removeWallpaperButton) {
